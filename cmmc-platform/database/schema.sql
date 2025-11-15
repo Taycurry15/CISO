@@ -1,436 +1,640 @@
--- CMMC Compliance Platform - Assessor-Grade Database Schema
--- Designed for immutable evidence, chain-of-custody, and CMMC L2/800-171A compliance
+-- ============================================================================
+-- CMMC Compliance Platform Database Schema
+-- PostgreSQL 14+
+-- ============================================================================
 
--- Extensions
+-- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-CREATE EXTENSION IF NOT EXISTS "vector";
+
+-- Enable pgvector for embeddings
+CREATE EXTENSION IF NOT EXISTS vector;
 
 -- ============================================================================
--- TENANCY & ORGANIZATIONS
+-- Organizations (Multi-Tenant)
 -- ============================================================================
 
 CREATE TABLE organizations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
-    duns_number VARCHAR(13),
-    cage_code VARCHAR(5),
-    cmmc_level INTEGER CHECK (cmmc_level IN (1, 2, 3)),
-    target_certification_date DATE,
+    organization_type VARCHAR(50) NOT NULL, -- Enterprise, SMB, Consultant, C3PAO
+    status VARCHAR(50) NOT NULL DEFAULT 'Trial', -- Active, Trial, Suspended, Inactive
+    address TEXT,
+    phone VARCHAR(20),
+    email VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_by VARCHAR(255)
 );
+
+CREATE INDEX idx_organizations_status ON organizations(status);
+CREATE INDEX idx_organizations_type ON organizations(organization_type);
+
+-- ============================================================================
+-- Users & Authentication
+-- ============================================================================
 
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     email VARCHAR(255) UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    role VARCHAR(50) NOT NULL, -- admin, assessor, viewer
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL, -- Admin, Assessor, Auditor, Viewer
+    status VARCHAR(50) NOT NULL DEFAULT 'Pending', -- Active, Inactive, Pending, Suspended
+    phone VARCHAR(20),
+    job_title VARCHAR(100),
+    email_verified BOOLEAN DEFAULT FALSE,
+    last_login TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_by VARCHAR(255)
+);
+
+CREATE INDEX idx_users_organization_id ON users(organization_id);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_status ON users(status);
+CREATE INDEX idx_users_role ON users(role);
+
+-- ============================================================================
+-- CMMC Controls (Master Data)
+-- ============================================================================
+
+CREATE TABLE cmmc_controls (
+    id VARCHAR(50) PRIMARY KEY, -- e.g., "AC.L2-3.1.1"
+    level INTEGER NOT NULL, -- 1, 2, or 3
+    domain VARCHAR(50) NOT NULL, -- AC, AT, AU, CA, CM, IA, IR, MA, MP, PE, PS, RA, SA, SC, SI
+    practice_id VARCHAR(50) NOT NULL, -- e.g., "3.1.1"
+    title TEXT NOT NULL,
+    objective TEXT NOT NULL,
+    discussion TEXT,
+    nist_control_id VARCHAR(50), -- Reference to NIST SP 800-171
+    assessment_objectives TEXT[],
+    examine_items TEXT[],
+    interview_items TEXT[],
+    test_items TEXT[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ============================================================================
--- CMMC FRAMEWORK & CONTROLS
--- ============================================================================
-
-CREATE TABLE control_domains (
-    id VARCHAR(10) PRIMARY KEY, -- AC, AU, AT, CM, etc.
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    cmmc_level INTEGER CHECK (cmmc_level IN (1, 2, 3))
-);
-
-CREATE TABLE controls (
-    id VARCHAR(20) PRIMARY KEY, -- AC.L1-3.1.1, AC.L2-3.1.2, etc.
-    domain_id VARCHAR(10) REFERENCES control_domains(id),
-    control_number VARCHAR(20) NOT NULL,
-    title TEXT NOT NULL,
-    nist_800_171_ref VARCHAR(20), -- 3.1.1, 3.1.2, etc.
-    cmmc_level INTEGER CHECK (cmmc_level IN (1, 2, 3)),
-    requirement_text TEXT NOT NULL,
-    discussion TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 800-171A Assessment Objectives (Examine/Interview/Test)
-CREATE TABLE assessment_objectives (
-    id VARCHAR(30) PRIMARY KEY, -- AC.L2-3.1.1[a], AC.L2-3.1.1[b], etc.
-    control_id VARCHAR(20) REFERENCES controls(id),
-    objective_letter VARCHAR(5) NOT NULL, -- [a], [b], [c], etc.
-    method VARCHAR(20) NOT NULL CHECK (method IN ('Examine', 'Interview', 'Test')),
-    determination_statement TEXT NOT NULL,
-    potential_assessment_methods TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+CREATE INDEX idx_controls_level ON cmmc_controls(level);
+CREATE INDEX idx_controls_domain ON cmmc_controls(domain);
+CREATE INDEX idx_controls_nist ON cmmc_controls(nist_control_id);
 
 -- ============================================================================
--- ASSESSMENTS & SCOPING
+-- Provider Inheritance (Master Data)
+-- ============================================================================
+
+CREATE TABLE provider_inheritance (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    control_id VARCHAR(50) NOT NULL REFERENCES cmmc_controls(id),
+    provider VARCHAR(50) NOT NULL, -- Microsoft365, Azure, AWS, GCP
+    service VARCHAR(255) NOT NULL, -- e.g., "Exchange Online", "Azure AD"
+    inheritance_type VARCHAR(50) NOT NULL, -- Inherited, Shared, Customer
+    coverage_percentage INTEGER NOT NULL DEFAULT 0, -- 0-100
+    configuration_required BOOLEAN DEFAULT FALSE,
+    configuration_steps TEXT[],
+    verification_steps TEXT[],
+    documentation_url TEXT,
+    last_verified TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_provider_inheritance_control ON provider_inheritance(control_id);
+CREATE INDEX idx_provider_inheritance_provider ON provider_inheritance(provider);
+CREATE INDEX idx_provider_inheritance_type ON provider_inheritance(inheritance_type);
+
+-- ============================================================================
+-- Assessments
 -- ============================================================================
 
 CREATE TABLE assessments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
-    cmmc_level INTEGER CHECK (cmmc_level IN (1, 2, 3)),
-    assessment_type VARCHAR(50) NOT NULL, -- self, c3pao, surveillance
-    status VARCHAR(50) NOT NULL, -- planning, in_progress, under_review, complete
-    start_date DATE,
-    target_completion_date DATE,
-    lead_assessor_id UUID REFERENCES users(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE assessment_scope (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    assessment_id UUID REFERENCES assessments(id) ON DELETE CASCADE,
-    asset_type VARCHAR(50) NOT NULL, -- system, network, facility, personnel
-    asset_name VARCHAR(255) NOT NULL,
-    asset_description TEXT,
-    cui_present BOOLEAN DEFAULT FALSE,
-    in_scope BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- ============================================================================
--- PROVIDER INHERITANCE (M365, Azure, AWS, etc.)
--- ============================================================================
-
-CREATE TABLE provider_offerings (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    provider_name VARCHAR(100) NOT NULL, -- M365 GCC High, Azure Government, AWS GovCloud
-    offering_name VARCHAR(100) NOT NULL, -- E5, P2, etc.
-    authorization_type VARCHAR(50), -- FedRAMP High, FedRAMP Moderate, etc.
-    authorization_date DATE,
-    authorization_expiry DATE,
-    documentation_url TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE provider_control_inheritance (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    provider_offering_id UUID REFERENCES provider_offerings(id) ON DELETE CASCADE,
-    control_id VARCHAR(20) REFERENCES controls(id),
-    objective_id VARCHAR(30) REFERENCES assessment_objectives(id),
-    responsibility VARCHAR(50) NOT NULL CHECK (responsibility IN ('Inherited', 'Shared', 'Customer')),
-    provider_narrative TEXT, -- What the provider does
-    customer_narrative TEXT, -- What customer must do
-    evidence_url TEXT, -- Link to provider's documentation
-    last_verified_date DATE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- ============================================================================
--- EVIDENCE MANAGEMENT (Immutable, Chain-of-Custody)
--- ============================================================================
-
-CREATE TABLE evidence (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    assessment_id UUID REFERENCES assessments(id) ON DELETE CASCADE,
-    control_id VARCHAR(20) REFERENCES controls(id),
-    objective_id VARCHAR(30) REFERENCES assessment_objectives(id),
-    
-    -- Evidence metadata
-    evidence_type VARCHAR(50) NOT NULL, -- document, screenshot, log, interview_notes, test_result, configuration
-    title VARCHAR(255) NOT NULL,
     description TEXT,
-    method VARCHAR(20) CHECK (method IN ('Examine', 'Interview', 'Test')),
-    
-    -- Immutability & chain-of-custody
-    file_path TEXT, -- Path to actual file in object storage
-    file_hash VARCHAR(64) NOT NULL, -- SHA-256 hash of file
-    file_size_bytes BIGINT,
-    mime_type VARCHAR(100),
-    
-    -- Provenance
-    collected_by UUID REFERENCES users(id),
-    collected_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    collection_method VARCHAR(100), -- manual_upload, api_nessus, api_splunk, automated_screenshot
-    
-    -- Version control
-    version INTEGER DEFAULT 1,
-    supersedes_evidence_id UUID REFERENCES evidence(id), -- Link to previous version
-    
-    -- Status
-    status VARCHAR(50) DEFAULT 'pending_review', -- pending_review, approved, rejected, superseded
-    reviewed_by UUID REFERENCES users(id),
-    reviewed_date TIMESTAMP WITH TIME ZONE,
-    reviewer_notes TEXT,
-    
+    assessment_type VARCHAR(50) NOT NULL, -- CMMC_L1, CMMC_L2, CMMC_L3, NIST_171
+    target_level INTEGER NOT NULL DEFAULT 2,
+    status VARCHAR(50) NOT NULL DEFAULT 'Draft', -- Draft, Scoping, In Progress, Review, Completed, Archived
+
+    -- Scope
+    scope_domains TEXT[], -- Domains in scope (or 'all')
+    scope_cloud_providers TEXT[], -- Cloud providers in use
+    scope_systems TEXT[], -- Systems in scope
+    scope_locations TEXT[], -- Physical locations
+
+    -- Dates
+    start_date TIMESTAMP WITH TIME ZONE,
+    end_date TIMESTAMP WITH TIME ZONE,
+    target_completion_date TIMESTAMP WITH TIME ZONE,
+
+    -- Metadata
+    lead_assessor_id UUID REFERENCES users(id),
+    assigned_users UUID[], -- Array of user IDs
+    tags TEXT[],
+
+    -- Progress tracking
+    total_controls INTEGER DEFAULT 0,
+    controls_met INTEGER DEFAULT 0,
+    controls_not_met INTEGER DEFAULT 0,
+    controls_partial INTEGER DEFAULT 0,
+    controls_na INTEGER DEFAULT 0,
+    completion_percentage INTEGER DEFAULT 0,
+
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
-    CONSTRAINT unique_file_hash UNIQUE (file_hash)
+    created_by UUID REFERENCES users(id)
 );
 
--- Evidence access log (chain-of-custody audit trail)
-CREATE TABLE evidence_access_log (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    evidence_id UUID REFERENCES evidence(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id),
-    action VARCHAR(50) NOT NULL, -- view, download, approve, reject, supersede
-    ip_address INET,
-    user_agent TEXT,
-    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+CREATE INDEX idx_assessments_organization_id ON assessments(organization_id);
+CREATE INDEX idx_assessments_status ON assessments(status);
+CREATE INDEX idx_assessments_type ON assessments(assessment_type);
+CREATE INDEX idx_assessments_lead_assessor ON assessments(lead_assessor_id);
+CREATE INDEX idx_assessments_created_at ON assessments(created_at DESC);
 
 -- ============================================================================
--- FINDINGS & DETERMINATIONS
+-- Control Findings (Assessment Results)
 -- ============================================================================
 
 CREATE TABLE control_findings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    assessment_id UUID REFERENCES assessments(id) ON DELETE CASCADE,
-    control_id VARCHAR(20) REFERENCES controls(id),
-    objective_id VARCHAR(30) REFERENCES assessment_objectives(id),
-    
-    -- Assessment determination
-    status VARCHAR(20) NOT NULL CHECK (status IN ('Met', 'Not Met', 'Partially Met', 'Not Applicable', 'Not Assessed')),
-    assessor_narrative TEXT NOT NULL, -- Human-readable explanation
-    
-    -- AI-assisted analysis
-    ai_generated BOOLEAN DEFAULT FALSE,
-    ai_confidence_score DECIMAL(5,2), -- 0.00 to 100.00
-    ai_rationale TEXT, -- Why AI made this determination
-    ai_evidence_ids UUID[], -- Array of evidence IDs used by AI
-    
-    -- Human review
-    human_reviewed BOOLEAN DEFAULT FALSE,
-    human_override BOOLEAN DEFAULT FALSE, -- Did human change AI determination?
-    reviewer_id UUID REFERENCES users(id),
-    reviewed_date TIMESTAMP WITH TIME ZONE,
-    reviewer_notes TEXT,
-    
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+    assessment_id UUID NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
+    control_id VARCHAR(50) NOT NULL REFERENCES cmmc_controls(id),
 
--- ============================================================================
--- PLAN OF ACTION & MILESTONES (POA&M)
--- ============================================================================
+    -- Finding details
+    status VARCHAR(50) NOT NULL DEFAULT 'Not Started', -- Not Started, In Progress, Met, Not Met, Partially Met, Not Applicable
+    implementation_status VARCHAR(50), -- Implemented, Partially Implemented, Planned, Not Implemented
 
-CREATE TABLE poam_items (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    assessment_id UUID REFERENCES assessments(id) ON DELETE CASCADE,
-    control_id VARCHAR(20) REFERENCES controls(id),
-    finding_id UUID REFERENCES control_findings(id),
-    
-    poam_id VARCHAR(50) NOT NULL, -- POA&M-001, POA&M-002, etc.
-    weakness_description TEXT NOT NULL,
-    risk_level VARCHAR(20) CHECK (risk_level IN ('Critical', 'High', 'Medium', 'Low')),
-    
-    -- Remediation plan
-    remediation_plan TEXT NOT NULL,
-    resources_required TEXT,
-    milestones JSONB, -- Array of milestone objects: [{name, target_date, status}]
-    
+    -- Narratives
+    implementation_narrative TEXT,
+    test_results TEXT,
+    findings TEXT,
+    recommendations TEXT,
+
+    -- Evidence linkage
+    evidence_ids UUID[], -- Array of evidence IDs
+
+    -- Provider inheritance
+    uses_provider_inheritance BOOLEAN DEFAULT FALSE,
+    provider_inheritance_id UUID REFERENCES provider_inheritance(id),
+    provider_notes TEXT,
+
+    -- AI Analysis
+    ai_generated_narrative TEXT,
+    ai_confidence_score DECIMAL(3,2), -- 0.00 to 1.00
+    ai_analysis_date TIMESTAMP WITH TIME ZONE,
+    ai_reviewed BOOLEAN DEFAULT FALSE,
+
+    -- Assessment methods (800-171A)
+    examine_completed BOOLEAN DEFAULT FALSE,
+    interview_completed BOOLEAN DEFAULT FALSE,
+    test_completed BOOLEAN DEFAULT FALSE,
+
+    -- Risk assessment
+    risk_level VARCHAR(50), -- Critical, High, Moderate, Low
+    residual_risk TEXT,
+
     -- Tracking
-    status VARCHAR(50) DEFAULT 'open', -- open, in_progress, completed, risk_accepted
     assigned_to UUID REFERENCES users(id),
-    estimated_completion_date DATE,
-    actual_completion_date DATE,
-    
+    last_reviewed_by UUID REFERENCES users(id),
+    last_reviewed_at TIMESTAMP WITH TIME ZONE,
+
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_by UUID REFERENCES users(id)
 );
 
+CREATE INDEX idx_control_findings_assessment ON control_findings(assessment_id);
+CREATE INDEX idx_control_findings_control ON control_findings(control_id);
+CREATE INDEX idx_control_findings_status ON control_findings(status);
+CREATE INDEX idx_control_findings_assigned_to ON control_findings(assigned_to);
+CREATE UNIQUE INDEX idx_control_findings_unique ON control_findings(assessment_id, control_id);
+
 -- ============================================================================
--- SYSTEM DIAGRAMS & GRAPH EXTRACTION
+-- Evidence
 -- ============================================================================
 
-CREATE TABLE system_diagrams (
+CREATE TABLE evidence (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    assessment_id UUID REFERENCES assessments(id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
-    diagram_type VARCHAR(50), -- network, data_flow, logical, physical
+    assessment_id UUID NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+
+    -- File metadata
+    file_name VARCHAR(255) NOT NULL,
     file_path TEXT NOT NULL,
-    file_hash VARCHAR(64) NOT NULL,
-    
-    -- Graph extraction
-    graph_extracted BOOLEAN DEFAULT FALSE,
-    graph_data JSONB, -- Nodes and edges extracted from diagram
-    extraction_confidence DECIMAL(5,2),
-    
-    uploaded_by UUID REFERENCES users(id),
+    file_size_bytes BIGINT NOT NULL,
+    file_type VARCHAR(100) NOT NULL,
+    mime_type VARCHAR(100),
+    file_hash VARCHAR(64), -- SHA-256
+
+    -- Evidence metadata
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    evidence_type VARCHAR(50) NOT NULL, -- Policy, Procedure, Configuration, Screenshot, Log, Scan, Certificate, Training, Other
+    assessment_method VARCHAR(50), -- Examine, Interview, Test
+
+    -- Tagging & categorization
+    control_ids VARCHAR(50)[], -- Array of control IDs this evidence supports
+    tags TEXT[],
+
+    -- Collection info
+    collection_date TIMESTAMP WITH TIME ZONE,
+    collected_by UUID REFERENCES users(id),
+
+    -- Document processing
+    extracted_text TEXT,
+    embedding vector(3072), -- OpenAI embedding dimension
+
+    -- Status
+    status VARCHAR(50) DEFAULT 'Active', -- Active, Archived, Deleted
+
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_by UUID REFERENCES users(id)
 );
 
--- Graph nodes (assets, systems, users, etc.)
-CREATE TABLE graph_nodes (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    diagram_id UUID REFERENCES system_diagrams(id) ON DELETE CASCADE,
-    node_type VARCHAR(50) NOT NULL, -- server, workstation, network, user, boundary, service
-    label VARCHAR(255) NOT NULL,
-    properties JSONB, -- Additional metadata
-    position_x DECIMAL(10,2),
-    position_y DECIMAL(10,2),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Graph edges (connections, data flows)
-CREATE TABLE graph_edges (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    diagram_id UUID REFERENCES system_diagrams(id) ON DELETE CASCADE,
-    source_node_id UUID REFERENCES graph_nodes(id) ON DELETE CASCADE,
-    target_node_id UUID REFERENCES graph_nodes(id) ON DELETE CASCADE,
-    edge_type VARCHAR(50), -- data_flow, network_connection, trust_boundary
-    label VARCHAR(255),
-    properties JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+CREATE INDEX idx_evidence_assessment ON evidence(assessment_id);
+CREATE INDEX idx_evidence_organization ON evidence(organization_id);
+CREATE INDEX idx_evidence_type ON evidence(evidence_type);
+CREATE INDEX idx_evidence_status ON evidence(status);
+CREATE INDEX idx_evidence_control_ids ON evidence USING GIN(control_ids);
+CREATE INDEX idx_evidence_embedding ON evidence USING ivfflat(embedding vector_cosine_ops) WITH (lists = 100);
 
 -- ============================================================================
--- DOCUMENT CHUNKS & RAG (Retrieval-Augmented Generation)
+-- Documents (For RAG System)
 -- ============================================================================
 
 CREATE TABLE documents (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    assessment_id UUID REFERENCES assessments(id) ON DELETE CASCADE,
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+
+    -- Document metadata
     title VARCHAR(255) NOT NULL,
-    document_type VARCHAR(50), -- policy, procedure, ssp, poam, manual, guide
+    description TEXT,
+    file_name VARCHAR(255) NOT NULL,
     file_path TEXT NOT NULL,
-    file_hash VARCHAR(64) NOT NULL,
-    uploaded_by UUID REFERENCES users(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    file_size_bytes BIGINT NOT NULL,
+    document_type VARCHAR(50) NOT NULL, -- Policy, Standard, Guideline, Procedure, Template, Reference
+
+    -- Content
+    content TEXT, -- Extracted text
+    embedding vector(3072), -- Document-level embedding
+
+    -- Categorization
+    category VARCHAR(100),
+    tags TEXT[],
+    control_ids VARCHAR(50)[], -- Related controls
+
+    -- Version control
+    version VARCHAR(50),
+    is_current_version BOOLEAN DEFAULT TRUE,
+
+    -- Status
+    status VARCHAR(50) DEFAULT 'Active', -- Active, Archived, Superseded
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_by UUID REFERENCES users(id)
 );
+
+CREATE INDEX idx_documents_organization ON documents(organization_id);
+CREATE INDEX idx_documents_type ON documents(document_type);
+CREATE INDEX idx_documents_status ON documents(status);
+CREATE INDEX idx_documents_embedding ON documents USING ivfflat(embedding vector_cosine_ops) WITH (lists = 100);
+
+-- ============================================================================
+-- Document Chunks (For RAG System)
+-- ============================================================================
 
 CREATE TABLE document_chunks (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    document_id UUID REFERENCES documents(id) ON DELETE CASCADE,
+    document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+
+    -- Chunk metadata
     chunk_index INTEGER NOT NULL,
-    chunk_text TEXT NOT NULL,
-    
-    -- RAG metadata for targeted retrieval
-    control_id VARCHAR(20) REFERENCES controls(id),
-    objective_id VARCHAR(30) REFERENCES assessment_objectives(id),
-    method VARCHAR(20) CHECK (method IN ('Examine', 'Interview', 'Test')),
-    doc_type VARCHAR(50), -- policy, procedure, evidence, guide
-    
-    -- Vector embedding for semantic search
-    embedding vector(1536), -- OpenAI ada-002 or similar
-    
+    content TEXT NOT NULL,
+    embedding vector(3072),
+
+    -- Position in document
+    page_number INTEGER,
+    section VARCHAR(255),
+
+    -- Metadata
+    char_count INTEGER,
+    token_count INTEGER,
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_chunks_document ON document_chunks(document_id);
+CREATE INDEX idx_chunks_embedding ON document_chunks USING ivfflat(embedding vector_cosine_ops) WITH (lists = 100);
+
+-- ============================================================================
+-- AI Analysis Results
+-- ============================================================================
+
+CREATE TABLE ai_analysis_results (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    assessment_id UUID NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
+    control_id VARCHAR(50) NOT NULL REFERENCES cmmc_controls(id),
+
+    -- Analysis details
+    analysis_type VARCHAR(50) NOT NULL, -- ControlNarrative, EvidenceReview, GapAnalysis, RiskAssessment
+    prompt_used TEXT,
+    model_used VARCHAR(100), -- e.g., "gpt-4-turbo", "claude-3-opus"
+
+    -- Results
+    result_text TEXT,
+    confidence_score DECIMAL(3,2), -- 0.00 to 1.00
+    reasoning TEXT,
+
+    -- Factors influencing confidence
+    evidence_quality_score DECIMAL(3,2),
+    evidence_quantity_score DECIMAL(3,2),
+    evidence_recency_score DECIMAL(3,2),
+    provider_inheritance_score DECIMAL(3,2),
+
+    -- Evidence used
+    evidence_ids UUID[],
+    document_chunks_used UUID[],
+
+    -- Metadata
+    tokens_used INTEGER,
+    cost_usd DECIMAL(10,4),
+    processing_time_ms INTEGER,
+
+    -- Review
+    reviewed BOOLEAN DEFAULT FALSE,
+    reviewed_by UUID REFERENCES users(id),
+    reviewed_at TIMESTAMP WITH TIME ZONE,
+    review_notes TEXT,
+
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
-    CONSTRAINT unique_chunk UNIQUE (document_id, chunk_index)
+    created_by UUID REFERENCES users(id)
 );
 
--- Index for vector similarity search
-CREATE INDEX document_chunks_embedding_idx ON document_chunks USING ivfflat (embedding vector_cosine_ops);
+CREATE INDEX idx_ai_results_assessment ON ai_analysis_results(assessment_id);
+CREATE INDEX idx_ai_results_control ON ai_analysis_results(control_id);
+CREATE INDEX idx_ai_results_type ON ai_analysis_results(analysis_type);
+CREATE INDEX idx_ai_results_created_at ON ai_analysis_results(created_at DESC);
 
 -- ============================================================================
--- INTEGRATION LOGS
+-- Audit Logs
 -- ============================================================================
 
-CREATE TABLE integration_runs (
+CREATE TABLE audit_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    integration_type VARCHAR(50) NOT NULL, -- nessus, splunk, azure, aws, m365
     organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
-    status VARCHAR(50) NOT NULL, -- running, success, failed
-    records_processed INTEGER DEFAULT 0,
-    errors_count INTEGER DEFAULT 0,
-    error_details JSONB,
-    started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    completed_at TIMESTAMP WITH TIME ZONE
+
+    -- Actor
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    user_email VARCHAR(255),
+    user_role VARCHAR(50),
+
+    -- Action
+    action VARCHAR(100) NOT NULL, -- create, update, delete, login, logout, etc.
+    resource_type VARCHAR(100) NOT NULL, -- assessment, evidence, user, etc.
+    resource_id UUID,
+
+    -- Details
+    description TEXT NOT NULL,
+    changes JSONB, -- Before/after values
+    metadata JSONB, -- Additional context
+
+    -- Request context
+    ip_address INET,
+    user_agent TEXT,
+    request_method VARCHAR(10),
+    request_path TEXT,
+
+    -- Result
+    status VARCHAR(50), -- success, failure, error
+    error_message TEXT,
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE INDEX idx_audit_logs_organization ON audit_logs(organization_id);
+CREATE INDEX idx_audit_logs_user ON audit_logs(user_id);
+CREATE INDEX idx_audit_logs_action ON audit_logs(action);
+CREATE INDEX idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
+CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at DESC);
+
 -- ============================================================================
--- SCORING & METRICS
+-- Comments & Collaboration
 -- ============================================================================
 
-CREATE TABLE sprs_scores (
+CREATE TABLE comments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    assessment_id UUID REFERENCES assessments(id) ON DELETE CASCADE,
-    score INTEGER CHECK (score >= -203 AND score <= 110), -- SPRS range: -203 to 110
-    calculation_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    details JSONB -- Breakdown by control family
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+
+    -- Parent resource
+    resource_type VARCHAR(100) NOT NULL, -- assessment, control_finding, evidence
+    resource_id UUID NOT NULL,
+
+    -- Comment details
+    content TEXT NOT NULL,
+    mentions UUID[], -- Array of mentioned user IDs
+
+    -- Threading
+    parent_comment_id UUID REFERENCES comments(id) ON DELETE CASCADE,
+    thread_depth INTEGER DEFAULT 0,
+
+    -- Status
+    is_edited BOOLEAN DEFAULT FALSE,
+    is_deleted BOOLEAN DEFAULT FALSE,
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_by UUID NOT NULL REFERENCES users(id)
 );
 
+CREATE INDEX idx_comments_organization ON comments(organization_id);
+CREATE INDEX idx_comments_resource ON comments(resource_type, resource_id);
+CREATE INDEX idx_comments_parent ON comments(parent_comment_id);
+CREATE INDEX idx_comments_created_by ON comments(created_by);
+CREATE INDEX idx_comments_created_at ON comments(created_at DESC);
+
 -- ============================================================================
--- INDEXES FOR PERFORMANCE
+-- Notifications
 -- ============================================================================
 
-CREATE INDEX idx_evidence_assessment ON evidence(assessment_id);
-CREATE INDEX idx_evidence_control ON evidence(control_id);
-CREATE INDEX idx_evidence_hash ON evidence(file_hash);
-CREATE INDEX idx_evidence_status ON evidence(status);
+CREATE TABLE notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 
-CREATE INDEX idx_findings_assessment ON control_findings(assessment_id);
-CREATE INDEX idx_findings_control ON control_findings(control_id);
-CREATE INDEX idx_findings_status ON control_findings(status);
+    -- Notification details
+    type VARCHAR(100) NOT NULL, -- assessment_assigned, comment_mention, deadline_reminder, etc.
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+
+    -- Related resource
+    resource_type VARCHAR(100),
+    resource_id UUID,
+    resource_url TEXT,
+
+    -- Status
+    is_read BOOLEAN DEFAULT FALSE,
+    read_at TIMESTAMP WITH TIME ZONE,
+
+    -- Delivery
+    sent_via VARCHAR(50)[], -- Array: in_app, email, slack
+    email_sent BOOLEAN DEFAULT FALSE,
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_notifications_user ON notifications(user_id);
+CREATE INDEX idx_notifications_organization ON notifications(organization_id);
+CREATE INDEX idx_notifications_is_read ON notifications(is_read);
+CREATE INDEX idx_notifications_created_at ON notifications(created_at DESC);
+
+-- ============================================================================
+-- POA&M Items (Plan of Action & Milestones)
+-- ============================================================================
+
+CREATE TABLE poam_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    assessment_id UUID NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    control_id VARCHAR(50) NOT NULL REFERENCES cmmc_controls(id),
+
+    -- Finding details
+    weakness_description TEXT NOT NULL,
+    risk_level VARCHAR(50) NOT NULL, -- Critical, High, Moderate, Low
+    impact VARCHAR(50), -- Very High, High, Moderate, Low
+    likelihood VARCHAR(50), -- Very High, High, Moderate, Low
+
+    -- Remediation
+    remediation_plan TEXT NOT NULL,
+    resources_required TEXT,
+    estimated_cost DECIMAL(12,2),
+
+    -- Milestones
+    milestone_date DATE NOT NULL,
+    scheduled_completion_date DATE NOT NULL,
+    actual_completion_date DATE,
+
+    -- Status tracking
+    status VARCHAR(50) NOT NULL DEFAULT 'Open', -- Open, In Progress, Completed, Risk Accepted, False Positive
+    percent_complete INTEGER DEFAULT 0,
+
+    -- Assignment
+    assigned_to UUID REFERENCES users(id),
+    point_of_contact VARCHAR(255),
+
+    -- External tracking
+    external_tracking_id VARCHAR(100), -- For Jira, ServiceNow, etc.
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_by UUID REFERENCES users(id)
+);
 
 CREATE INDEX idx_poam_assessment ON poam_items(assessment_id);
+CREATE INDEX idx_poam_organization ON poam_items(organization_id);
+CREATE INDEX idx_poam_control ON poam_items(control_id);
 CREATE INDEX idx_poam_status ON poam_items(status);
-
-CREATE INDEX idx_doc_chunks_control ON document_chunks(control_id);
-CREATE INDEX idx_doc_chunks_objective ON document_chunks(objective_id);
-
-CREATE INDEX idx_provider_control ON provider_control_inheritance(control_id);
-CREATE INDEX idx_provider_offering ON provider_control_inheritance(provider_offering_id);
+CREATE INDEX idx_poam_assigned_to ON poam_items(assigned_to);
+CREATE INDEX idx_poam_milestone_date ON poam_items(milestone_date);
 
 -- ============================================================================
--- ROW LEVEL SECURITY (Multi-tenancy)
+-- System Configuration
 -- ============================================================================
 
-ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE assessments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE evidence ENABLE ROW LEVEL SECURITY;
-ALTER TABLE control_findings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE poam_items ENABLE ROW LEVEL SECURITY;
-
--- RLS policies (example - expand based on user roles)
-CREATE POLICY organization_isolation ON organizations
-    FOR ALL TO authenticated
-    USING (id = current_setting('app.current_organization_id')::UUID);
-
-CREATE POLICY assessment_isolation ON assessments
-    FOR ALL TO authenticated
-    USING (organization_id = current_setting('app.current_organization_id')::UUID);
-
--- ============================================================================
--- AUDIT TRIGGERS
--- ============================================================================
-
-CREATE TABLE audit_log (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    table_name VARCHAR(100) NOT NULL,
-    record_id UUID NOT NULL,
-    action VARCHAR(20) NOT NULL, -- INSERT, UPDATE, DELETE
-    old_data JSONB,
-    new_data JSONB,
-    user_id UUID,
-    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE system_config (
+    key VARCHAR(100) PRIMARY KEY,
+    value JSONB NOT NULL,
+    description TEXT,
+    is_encrypted BOOLEAN DEFAULT FALSE,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_by UUID REFERENCES users(id)
 );
 
--- Trigger function for audit logging
-CREATE OR REPLACE FUNCTION audit_trigger_func() 
+-- ============================================================================
+-- Functions & Triggers
+-- ============================================================================
+
+-- Update updated_at timestamp automatically
+CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF TG_OP = 'DELETE' THEN
-        INSERT INTO audit_log(table_name, record_id, action, old_data, user_id)
-        VALUES (TG_TABLE_NAME, OLD.id, 'DELETE', row_to_json(OLD), current_setting('app.current_user_id', TRUE)::UUID);
-        RETURN OLD;
-    ELSIF TG_OP = 'UPDATE' THEN
-        INSERT INTO audit_log(table_name, record_id, action, old_data, new_data, user_id)
-        VALUES (TG_TABLE_NAME, NEW.id, 'UPDATE', row_to_json(OLD), row_to_json(NEW), current_setting('app.current_user_id', TRUE)::UUID);
-        RETURN NEW;
-    ELSIF TG_OP = 'INSERT' THEN
-        INSERT INTO audit_log(table_name, record_id, action, new_data, user_id)
-        VALUES (TG_TABLE_NAME, NEW.id, 'INSERT', row_to_json(NEW), current_setting('app.current_user_id', TRUE)::UUID);
-        RETURN NEW;
-    END IF;
+    NEW.updated_at = NOW();
+    RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ language 'plpgsql';
 
--- Apply audit triggers to critical tables
-CREATE TRIGGER audit_evidence AFTER INSERT OR UPDATE OR DELETE ON evidence
-    FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();
+-- Apply trigger to all tables with updated_at
+CREATE TRIGGER update_organizations_updated_at BEFORE UPDATE ON organizations FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_assessments_updated_at BEFORE UPDATE ON assessments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_control_findings_updated_at BEFORE UPDATE ON control_findings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_evidence_updated_at BEFORE UPDATE ON evidence FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_documents_updated_at BEFORE UPDATE ON documents FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_poam_items_updated_at BEFORE UPDATE ON poam_items FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_comments_updated_at BEFORE UPDATE ON comments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER audit_findings AFTER INSERT OR UPDATE OR DELETE ON control_findings
-    FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();
+-- ============================================================================
+-- Views
+-- ============================================================================
 
-CREATE TRIGGER audit_poam AFTER INSERT OR UPDATE OR DELETE ON poam_items
-    FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();
+-- Assessment Summary View
+CREATE OR REPLACE VIEW assessment_summary AS
+SELECT
+    a.id,
+    a.organization_id,
+    a.name,
+    a.status,
+    a.assessment_type,
+    a.target_level,
+    a.start_date,
+    a.end_date,
+    a.lead_assessor_id,
+    u.full_name as lead_assessor_name,
+    a.total_controls,
+    a.controls_met,
+    a.controls_not_met,
+    a.controls_partial,
+    a.controls_na,
+    a.completion_percentage,
+    CASE
+        WHEN a.total_controls > 0 THEN
+            ROUND((a.controls_met::DECIMAL / a.total_controls) * 100, 2)
+        ELSE 0
+    END as compliance_percentage,
+    COUNT(DISTINCT e.id) as evidence_count,
+    COUNT(DISTINCT cf.id) as findings_count,
+    a.created_at,
+    a.updated_at
+FROM assessments a
+LEFT JOIN users u ON a.lead_assessor_id = u.id
+LEFT JOIN evidence e ON a.id = e.assessment_id AND e.status = 'Active'
+LEFT JOIN control_findings cf ON a.id = cf.assessment_id
+GROUP BY a.id, u.full_name;
+
+-- Control Compliance View
+CREATE OR REPLACE VIEW control_compliance AS
+SELECT
+    c.id as control_id,
+    c.domain,
+    c.level,
+    c.title,
+    COUNT(DISTINCT cf.id) as total_findings,
+    COUNT(DISTINCT CASE WHEN cf.status = 'Met' THEN cf.id END) as met_count,
+    COUNT(DISTINCT CASE WHEN cf.status = 'Not Met' THEN cf.id END) as not_met_count,
+    COUNT(DISTINCT CASE WHEN cf.status = 'Partially Met' THEN cf.id END) as partial_count,
+    AVG(cf.ai_confidence_score) as avg_confidence_score,
+    COUNT(DISTINCT e.id) as total_evidence
+FROM cmmc_controls c
+LEFT JOIN control_findings cf ON c.id = cf.control_id
+LEFT JOIN evidence e ON c.id = ANY(e.control_ids)
+GROUP BY c.id, c.domain, c.level, c.title;
+
+-- ============================================================================
+-- Grants (Example - adjust per your user setup)
+-- ============================================================================
+
+-- GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO cmmc_app;
+-- GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO cmmc_app;
+-- GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO cmmc_app;
