@@ -1,0 +1,322 @@
+{
+  "provider_name": "Microsoft 365 GCC High",
+  "provider_type": "SaaS",
+  "description": "Microsoft 365 Government Community Cloud High - designed for federal agencies and contractors handling CUI",
+  "certification_level": "FedRAMP High",
+  "documentation_url": "https://learn.microsoft.com/en-us/compliance/regulatory/offering-fedramp",
+  "control_mappings": [
+    {
+      "control_id": "AC.L2-3.1.1",
+      "control_title": "Authorized Access Control",
+      "responsibility": "Shared",
+      "microsoft_responsibility": "Microsoft manages the M365 platform access control mechanisms, including Azure AD authentication and authorization services",
+      "customer_responsibility": "Customer configures user access policies, assigns roles, and manages user provisioning/deprovisioning within their tenant",
+      "inherited_controls": [],
+      "implementation_guidance": "Configure Conditional Access policies, enable MFA, review user access regularly using Azure AD access reviews",
+      "evidence_artifacts": [
+        "Azure AD Conditional Access policies configuration",
+        "User access review reports",
+        "Role assignments documentation"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/active-directory/conditional-access/"
+    },
+    {
+      "control_id": "AC.L2-3.1.2",
+      "control_title": "Transaction and Function Control",
+      "responsibility": "Shared",
+      "microsoft_responsibility": "Microsoft provides role-based access control (RBAC) capabilities within M365 services",
+      "customer_responsibility": "Customer implements and enforces transaction controls by assigning appropriate roles and permissions",
+      "inherited_controls": [],
+      "implementation_guidance": "Use built-in M365 roles or create custom roles, implement least privilege principle",
+      "evidence_artifacts": [
+        "Role assignment matrix",
+        "Custom role definitions",
+        "Permission audit logs"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/microsoft-365/admin/add-users/about-admin-roles"
+    },
+    {
+      "control_id": "AC.L2-3.1.3",
+      "control_title": "External Connections",
+      "responsibility": "Shared",
+      "microsoft_responsibility": "Microsoft provides external sharing controls and guest access management capabilities",
+      "customer_responsibility": "Customer configures external sharing policies and manages guest user access",
+      "inherited_controls": [],
+      "implementation_guidance": "Configure SharePoint and Teams external sharing settings, review guest users regularly",
+      "evidence_artifacts": [
+        "External sharing policy configuration",
+        "Guest user access reviews",
+        "External collaboration settings"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/sharepoint/external-sharing-overview"
+    },
+    {
+      "control_id": "AC.L2-3.1.5",
+      "control_title": "Separation of Duties",
+      "responsibility": "Customer",
+      "microsoft_responsibility": null,
+      "customer_responsibility": "Customer implements separation of duties through role assignments and approval workflows",
+      "inherited_controls": [],
+      "implementation_guidance": "Design role structure to separate duties, implement approval workflows in Power Automate",
+      "evidence_artifacts": [
+        "Separation of duties matrix",
+        "Workflow configurations",
+        "Role conflict analysis"
+      ],
+      "authoritative_source": null
+    },
+    {
+      "control_id": "AC.L2-3.1.20",
+      "control_title": "External System Connections",
+      "responsibility": "Shared",
+      "microsoft_responsibility": "Microsoft secures M365 platform connections and provides API security",
+      "customer_responsibility": "Customer manages application registrations and API permissions",
+      "inherited_controls": [],
+      "implementation_guidance": "Review app registrations, implement least privilege for API permissions, monitor OAuth consent grants",
+      "evidence_artifacts": [
+        "App registration inventory",
+        "API permission review",
+        "OAuth consent audit logs"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/active-directory/develop/quickstart-register-app"
+    },
+    {
+      "control_id": "AU.L2-3.3.1",
+      "control_title": "System Audit Logs",
+      "responsibility": "Shared",
+      "microsoft_responsibility": "Microsoft generates and stores audit logs for M365 services",
+      "customer_responsibility": "Customer enables audit logging, reviews logs, and retains per policy requirements",
+      "inherited_controls": [],
+      "implementation_guidance": "Enable Microsoft 365 audit logging, configure retention policies, export logs to SIEM if required",
+      "evidence_artifacts": [
+        "Audit log configuration",
+        "Audit log retention policies",
+        "Sample audit log reports"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/purview/audit-log-enable-disable"
+    },
+    {
+      "control_id": "AU.L2-3.3.2",
+      "control_title": "User Accountability",
+      "responsibility": "Shared",
+      "microsoft_responsibility": "Microsoft captures user actions in audit logs with user identity",
+      "customer_responsibility": "Customer reviews audit logs for user accountability and investigates anomalies",
+      "inherited_controls": [],
+      "implementation_guidance": "Regularly review user activity reports, investigate unusual access patterns",
+      "evidence_artifacts": [
+        "User activity reports",
+        "Anomaly investigation records",
+        "Audit log queries"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/purview/audit-log-search"
+    },
+    {
+      "control_id": "AU.L2-3.3.3",
+      "control_title": "Audit Review and Analysis",
+      "responsibility": "Customer",
+      "microsoft_responsibility": null,
+      "customer_responsibility": "Customer reviews and analyzes audit logs to detect security incidents",
+      "inherited_controls": [],
+      "implementation_guidance": "Establish audit review procedures, use Microsoft Defender for Cloud Apps or SIEM for analysis",
+      "evidence_artifacts": [
+        "Audit review procedures",
+        "Analysis reports",
+        "Alert configurations"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/defender-cloud-apps/"
+    },
+    {
+      "control_id": "IA.L2-3.5.1",
+      "control_title": "User Identification",
+      "responsibility": "Shared",
+      "microsoft_responsibility": "Microsoft provides Azure AD for user identity management",
+      "customer_responsibility": "Customer manages user identities, ensures uniqueness, and provisions/deprovisions users",
+      "inherited_controls": [],
+      "implementation_guidance": "Use Azure AD as identity provider, implement automated provisioning, maintain user directory",
+      "evidence_artifacts": [
+        "Azure AD user directory",
+        "Provisioning workflows",
+        "User lifecycle procedures"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/active-directory/fundamentals/"
+    },
+    {
+      "control_id": "IA.L2-3.5.2",
+      "control_title": "User Authentication",
+      "responsibility": "Shared",
+      "microsoft_responsibility": "Microsoft provides authentication mechanisms including MFA through Azure AD",
+      "customer_responsibility": "Customer enforces authentication policies and requires MFA for users",
+      "inherited_controls": [],
+      "implementation_guidance": "Enable MFA for all users, configure authentication policies, monitor authentication failures",
+      "evidence_artifacts": [
+        "MFA enrollment status",
+        "Authentication policy configuration",
+        "Sign-in logs"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/active-directory/authentication/"
+    },
+    {
+      "control_id": "IA.L2-3.5.3",
+      "control_title": "Multi-Factor Authentication",
+      "responsibility": "Shared",
+      "microsoft_responsibility": "Microsoft provides MFA capabilities through Azure AD MFA",
+      "customer_responsibility": "Customer enforces MFA requirements for all remote and privileged access",
+      "inherited_controls": [],
+      "implementation_guidance": "Require MFA via Conditional Access policies, support multiple MFA methods, monitor MFA usage",
+      "evidence_artifacts": [
+        "Conditional Access policy requiring MFA",
+        "MFA method distribution report",
+        "MFA usage statistics"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/active-directory/authentication/concept-mfa-howitworks"
+    },
+    {
+      "control_id": "IA.L2-3.5.7",
+      "control_title": "Cryptographic Module Authentication",
+      "responsibility": "Inherited",
+      "microsoft_responsibility": "Microsoft uses FIPS 140-2 validated cryptographic modules for authentication in M365 GCC High",
+      "customer_responsibility": null,
+      "inherited_controls": ["IA.L2-3.5.7"],
+      "implementation_guidance": "No customer action required - inherent in M365 GCC High platform",
+      "evidence_artifacts": [
+        "Microsoft FIPS 140-2 validation certificates"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/compliance/regulatory/offering-fips-140-2"
+    },
+    {
+      "control_id": "IA.L2-3.5.8",
+      "control_title": "Replay-Resistant Authentication",
+      "responsibility": "Inherited",
+      "microsoft_responsibility": "Microsoft implements replay-resistant authentication mechanisms in Azure AD",
+      "customer_responsibility": null,
+      "inherited_controls": ["IA.L2-3.5.8"],
+      "implementation_guidance": "No customer action required - inherent in Azure AD authentication",
+      "evidence_artifacts": [
+        "Microsoft security documentation on replay protection"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/active-directory/authentication/"
+    },
+    {
+      "control_id": "SC.L2-3.13.1",
+      "control_title": "Boundary Protection",
+      "responsibility": "Shared",
+      "microsoft_responsibility": "Microsoft implements boundary protection for M365 infrastructure",
+      "customer_responsibility": "Customer configures network boundaries for on-premises connections (if hybrid)",
+      "inherited_controls": [],
+      "implementation_guidance": "If hybrid, implement Azure AD Connect securely, use VPN for ExpressRoute",
+      "evidence_artifacts": [
+        "Network architecture diagram",
+        "Azure AD Connect configuration",
+        "VPN/ExpressRoute setup"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/active-directory/hybrid/"
+    },
+    {
+      "control_id": "SC.L2-3.13.8",
+      "control_title": "Transmission Confidentiality",
+      "responsibility": "Inherited",
+      "microsoft_responsibility": "Microsoft enforces TLS 1.2+ for all M365 service communications",
+      "customer_responsibility": null,
+      "inherited_controls": ["SC.L2-3.13.8"],
+      "implementation_guidance": "No customer action required - TLS enforced by platform",
+      "evidence_artifacts": [
+        "Microsoft TLS implementation documentation"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/microsoft-365/compliance/encryption"
+    },
+    {
+      "control_id": "SC.L2-3.13.11",
+      "control_title": "Cryptographic Protection",
+      "responsibility": "Inherited",
+      "microsoft_responsibility": "Microsoft implements encryption for data at rest and in transit in M365 GCC High using FIPS 140-2 validated modules",
+      "customer_responsibility": null,
+      "inherited_controls": ["SC.L2-3.13.11"],
+      "implementation_guidance": "No customer action required - encryption enforced by platform",
+      "evidence_artifacts": [
+        "Microsoft encryption documentation",
+        "FIPS 140-2 certificates"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/microsoft-365/compliance/encryption"
+    },
+    {
+      "control_id": "SC.L2-3.13.16",
+      "control_title": "Data at Rest Protection",
+      "responsibility": "Inherited",
+      "microsoft_responsibility": "Microsoft encrypts all data at rest in M365 GCC High using BitLocker and service encryption",
+      "customer_responsibility": null,
+      "inherited_controls": ["SC.L2-3.13.16"],
+      "implementation_guidance": "No customer action required - encryption automatic. Optional: Use Customer Key for additional control",
+      "evidence_artifacts": [
+        "Microsoft encryption documentation",
+        "Customer Key configuration (if used)"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/microsoft-365/compliance/service-encryption-with-customer-key"
+    },
+    {
+      "control_id": "SI.L2-3.14.1",
+      "control_title": "Flaw Remediation",
+      "responsibility": "Inherited",
+      "microsoft_responsibility": "Microsoft identifies, reports, and corrects system flaws in M365 platform",
+      "customer_responsibility": null,
+      "inherited_controls": ["SI.L2-3.14.1"],
+      "implementation_guidance": "No customer action required - Microsoft patches platform. Customer should monitor Microsoft 365 Message Center",
+      "evidence_artifacts": [
+        "Microsoft patch management documentation",
+        "Message Center notifications"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/microsoft-365/admin/manage/message-center"
+    },
+    {
+      "control_id": "SI.L2-3.14.2",
+      "control_title": "Malicious Code Protection",
+      "responsibility": "Shared",
+      "microsoft_responsibility": "Microsoft provides Microsoft Defender for Office 365 with anti-malware capabilities",
+      "customer_responsibility": "Customer enables and configures Defender for Office 365 policies",
+      "inherited_controls": [],
+      "implementation_guidance": "Enable Safe Attachments and Safe Links, configure anti-malware policies, review threat reports",
+      "evidence_artifacts": [
+        "Defender for Office 365 configuration",
+        "Anti-malware policy settings",
+        "Threat protection reports"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/microsoft-365/security/office-365-security/"
+    },
+    {
+      "control_id": "SI.L2-3.14.4",
+      "control_title": "Update Malicious Code Protection",
+      "responsibility": "Inherited",
+      "microsoft_responsibility": "Microsoft automatically updates malicious code protection mechanisms in Defender for Office 365",
+      "customer_responsibility": null,
+      "inherited_controls": ["SI.L2-3.14.4"],
+      "implementation_guidance": "No customer action required - updates automatic",
+      "evidence_artifacts": [
+        "Microsoft documentation on automatic updates"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/microsoft-365/security/office-365-security/"
+    },
+    {
+      "control_id": "SI.L2-3.14.5",
+      "control_title": "System Monitoring",
+      "responsibility": "Shared",
+      "microsoft_responsibility": "Microsoft monitors M365 infrastructure and provides security monitoring tools",
+      "customer_responsibility": "Customer uses Microsoft Defender for Cloud Apps and audit logs to monitor tenant activity",
+      "inherited_controls": [],
+      "implementation_guidance": "Enable Defender for Cloud Apps, configure alerts, review security reports regularly",
+      "evidence_artifacts": [
+        "Defender for Cloud Apps configuration",
+        "Alert policies",
+        "Security review reports"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/defender-cloud-apps/"
+    }
+  ],
+  "summary": {
+    "total_controls_mapped": 21,
+    "inherited_count": 7,
+    "shared_count": 12,
+    "customer_count": 2,
+    "coverage_percentage": 19.1
+  },
+  "notes": "M365 GCC High provides significant inherited controls especially for cryptography, transmission security, and platform-level protections. Shared responsibility model requires customer configuration of identity, access, and monitoring controls.",
+  "last_updated": "2024-01-15"
+}

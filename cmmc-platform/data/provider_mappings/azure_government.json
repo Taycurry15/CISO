@@ -1,0 +1,285 @@
+{
+  "provider_name": "Microsoft Azure Government",
+  "provider_type": "IaaS/PaaS",
+  "description": "Azure cloud services designed for U.S. government agencies and partners, with dedicated regions and enhanced compliance",
+  "certification_level": "FedRAMP High, DoD IL5",
+  "documentation_url": "https://learn.microsoft.com/en-us/azure/azure-government/",
+  "control_mappings": [
+    {
+      "control_id": "AC.L2-3.1.1",
+      "control_title": "Authorized Access Control",
+      "responsibility": "Shared",
+      "azure_responsibility": "Azure provides Azure AD, Azure RBAC, and network security groups for access control",
+      "customer_responsibility": "Customer configures RBAC roles, network rules, and manages user access to resources",
+      "inherited_controls": [],
+      "implementation_guidance": "Use Azure RBAC for resource access, implement network security groups, use Azure AD Conditional Access",
+      "evidence_artifacts": [
+        "Azure RBAC role assignments",
+        "Network security group rules",
+        "Azure AD Conditional Access policies"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/role-based-access-control/"
+    },
+    {
+      "control_id": "AC.L2-3.1.3",
+      "control_title": "External Connections",
+      "responsibility": "Shared",
+      "azure_responsibility": "Azure provides network isolation, VNets, and ExpressRoute for controlled connectivity",
+      "customer_responsibility": "Customer configures VNet peering, ExpressRoute, and firewall rules for external connections",
+      "inherited_controls": [],
+      "implementation_guidance": "Use Azure Firewall, configure NSG rules, implement ExpressRoute for dedicated connections",
+      "evidence_artifacts": [
+        "Azure Firewall configuration",
+        "ExpressRoute setup",
+        "VNet peering documentation"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/firewall/"
+    },
+    {
+      "control_id": "AU.L2-3.3.1",
+      "control_title": "System Audit Logs",
+      "responsibility": "Shared",
+      "azure_responsibility": "Azure generates platform audit logs via Azure Monitor and Activity Logs",
+      "customer_responsibility": "Customer enables diagnostic logging, configures log retention, and exports to Log Analytics or SIEM",
+      "inherited_controls": [],
+      "implementation_guidance": "Enable Azure Monitor, configure diagnostic settings for all resources, set retention policies",
+      "evidence_artifacts": [
+        "Azure Monitor configuration",
+        "Diagnostic settings for resources",
+        "Log Analytics workspace setup"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/azure-monitor/"
+    },
+    {
+      "control_id": "AU.L2-3.3.9",
+      "control_title": "Audit Log Protection",
+      "responsibility": "Shared",
+      "azure_responsibility": "Azure protects platform audit logs with encryption and access controls",
+      "customer_responsibility": "Customer protects custom audit logs and Log Analytics workspace with RBAC",
+      "inherited_controls": [],
+      "implementation_guidance": "Use Log Analytics workspace with RBAC, enable immutable storage for critical logs",
+      "evidence_artifacts": [
+        "Log Analytics RBAC configuration",
+        "Immutable storage settings",
+        "Audit log protection policies"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/azure-monitor/logs/data-security"
+    },
+    {
+      "control_id": "CM.L2-3.4.1",
+      "control_title": "Baseline Configuration",
+      "responsibility": "Shared",
+      "azure_responsibility": "Azure maintains secure baseline configurations for platform services",
+      "customer_responsibility": "Customer establishes and maintains configuration baselines for deployed resources",
+      "inherited_controls": [],
+      "implementation_guidance": "Use Azure Policy to enforce configuration baselines, leverage Azure Blueprints",
+      "evidence_artifacts": [
+        "Azure Policy assignments",
+        "Azure Blueprint definitions",
+        "Configuration baseline documentation"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/governance/policy/"
+    },
+    {
+      "control_id": "CM.L2-3.4.2",
+      "control_title": "Security Configuration Settings",
+      "responsibility": "Shared",
+      "azure_responsibility": "Azure provides security configuration capabilities via Azure Policy and Security Center",
+      "customer_responsibility": "Customer configures and enforces security settings for deployed resources",
+      "inherited_controls": [],
+      "implementation_guidance": "Use Microsoft Defender for Cloud recommendations, implement Azure Policy for security settings",
+      "evidence_artifacts": [
+        "Defender for Cloud compliance dashboard",
+        "Azure Policy compliance reports",
+        "Security configuration documentation"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/defender-for-cloud/"
+    },
+    {
+      "control_id": "CM.L2-3.4.6",
+      "control_title": "Least Functionality",
+      "responsibility": "Customer",
+      "azure_responsibility": null,
+      "customer_responsibility": "Customer configures resources to provide only essential capabilities",
+      "inherited_controls": [],
+      "implementation_guidance": "Disable unused services, remove unnecessary packages from VMs, use minimal base images",
+      "evidence_artifacts": [
+        "Service configuration documentation",
+        "VM hardening procedures",
+        "Container image scanning results"
+      ],
+      "authoritative_source": null
+    },
+    {
+      "control_id": "CM.L2-3.4.7",
+      "control_title": "Nonessential Programs and Functions",
+      "responsibility": "Customer",
+      "azure_responsibility": null,
+      "customer_responsibility": "Customer restricts and monitors use of nonessential programs",
+      "inherited_controls": [],
+      "implementation_guidance": "Use application allowlisting, implement Just-in-Time VM access, monitor for unauthorized software",
+      "evidence_artifacts": [
+        "Application control policies",
+        "JIT access configuration",
+        "Software inventory"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/defender-for-cloud/just-in-time-access-usage"
+    },
+    {
+      "control_id": "IA.L2-3.5.7",
+      "control_title": "Cryptographic Module Authentication",
+      "responsibility": "Inherited",
+      "azure_responsibility": "Azure uses FIPS 140-2 validated cryptographic modules for authentication",
+      "customer_responsibility": null,
+      "inherited_controls": ["IA.L2-3.5.7"],
+      "implementation_guidance": "No customer action required - inherent in Azure Government",
+      "evidence_artifacts": [
+        "Azure FIPS 140-2 validation documentation"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/compliance/offerings/offering-fips-140-2"
+    },
+    {
+      "control_id": "IR.L2-3.6.1",
+      "control_title": "Incident Response",
+      "responsibility": "Shared",
+      "azure_responsibility": "Azure provides incident detection via Microsoft Defender for Cloud",
+      "customer_responsibility": "Customer implements incident response procedures and uses Azure tools for detection/response",
+      "inherited_controls": [],
+      "implementation_guidance": "Use Microsoft Sentinel for SIEM/SOAR, configure Defender for Cloud alerts, establish IR procedures",
+      "evidence_artifacts": [
+        "Incident response plan",
+        "Microsoft Sentinel configuration",
+        "Defender for Cloud alert rules"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/sentinel/"
+    },
+    {
+      "control_id": "SC.L2-3.13.1",
+      "control_title": "Boundary Protection",
+      "responsibility": "Shared",
+      "azure_responsibility": "Azure implements network boundary protection for infrastructure",
+      "customer_responsibility": "Customer implements boundary protection via VNets, NSGs, and Azure Firewall",
+      "inherited_controls": [],
+      "implementation_guidance": "Segment networks using VNets and subnets, deploy Azure Firewall, use NSGs for micro-segmentation",
+      "evidence_artifacts": [
+        "Network architecture diagram",
+        "VNet and subnet configuration",
+        "Azure Firewall rules",
+        "NSG rules"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/firewall/"
+    },
+    {
+      "control_id": "SC.L2-3.13.8",
+      "control_title": "Transmission Confidentiality",
+      "responsibility": "Shared",
+      "azure_responsibility": "Azure enforces TLS 1.2+ for management plane connections",
+      "customer_responsibility": "Customer configures TLS for application communications and data plane",
+      "inherited_controls": [],
+      "implementation_guidance": "Configure TLS 1.2+ for application gateways, disable older protocols, use Azure Key Vault for certificates",
+      "evidence_artifacts": [
+        "TLS configuration for services",
+        "Application Gateway SSL policies",
+        "Certificate management procedures"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/application-gateway/application-gateway-ssl-policy-overview"
+    },
+    {
+      "control_id": "SC.L2-3.13.11",
+      "control_title": "Cryptographic Protection",
+      "responsibility": "Shared",
+      "azure_responsibility": "Azure provides encryption capabilities using FIPS 140-2 validated modules",
+      "customer_responsibility": "Customer enables and configures encryption for data at rest and in transit",
+      "inherited_controls": [],
+      "implementation_guidance": "Enable Azure Disk Encryption, use Azure Storage Service Encryption, configure database TDE",
+      "evidence_artifacts": [
+        "Disk encryption configuration",
+        "Storage encryption settings",
+        "Database TDE status"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/security/fundamentals/encryption-overview"
+    },
+    {
+      "control_id": "SC.L2-3.13.16",
+      "control_title": "Data at Rest Protection",
+      "responsibility": "Shared",
+      "azure_responsibility": "Azure provides platform-level encryption for data at rest",
+      "customer_responsibility": "Customer enables encryption for storage accounts, managed disks, and databases",
+      "inherited_controls": [],
+      "implementation_guidance": "Enable Azure Disk Encryption for VMs, use Storage Service Encryption, enable SQL TDE",
+      "evidence_artifacts": [
+        "Encryption status for all storage resources",
+        "Key Vault access policies",
+        "Encryption key management procedures"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/security/fundamentals/encryption-atrest"
+    },
+    {
+      "control_id": "SI.L2-3.14.1",
+      "control_title": "Flaw Remediation",
+      "responsibility": "Shared",
+      "azure_responsibility": "Azure patches platform services and infrastructure",
+      "customer_responsibility": "Customer patches VMs, containers, and custom applications using Azure Update Management",
+      "inherited_controls": [],
+      "implementation_guidance": "Enable Update Management for VMs, configure automatic updates, monitor patching compliance",
+      "evidence_artifacts": [
+        "Update Management configuration",
+        "Patch compliance reports",
+        "VM update schedules"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/automation/update-management/overview"
+    },
+    {
+      "control_id": "SI.L2-3.14.2",
+      "control_title": "Malicious Code Protection",
+      "responsibility": "Shared",
+      "azure_responsibility": "Azure provides Microsoft Defender for Cloud with malware protection capabilities",
+      "customer_responsibility": "Customer enables and configures anti-malware for VMs and workloads",
+      "inherited_controls": [],
+      "implementation_guidance": "Enable Microsoft Defender for Servers, deploy anti-malware extensions to VMs, configure real-time protection",
+      "evidence_artifacts": [
+        "Defender for Servers configuration",
+        "Anti-malware extension deployment",
+        "Malware detection reports"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/defender-for-cloud/defender-for-servers-introduction"
+    },
+    {
+      "control_id": "SI.L2-3.14.4",
+      "control_title": "Update Malicious Code Protection",
+      "responsibility": "Shared",
+      "azure_responsibility": "Azure automatically updates platform-level malware protection",
+      "customer_responsibility": "Customer ensures anti-malware definitions are updated on VMs",
+      "inherited_controls": [],
+      "implementation_guidance": "Configure automatic definition updates, monitor update status via Defender for Cloud",
+      "evidence_artifacts": [
+        "Anti-malware update configuration",
+        "Definition update status reports"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/defender-for-cloud/"
+    },
+    {
+      "control_id": "SI.L2-3.14.6",
+      "control_title": "Security Alerts and Advisories",
+      "responsibility": "Shared",
+      "azure_responsibility": "Azure publishes security advisories via Service Health and Security Center",
+      "customer_responsibility": "Customer monitors Azure security advisories and takes appropriate action",
+      "inherited_controls": [],
+      "implementation_guidance": "Subscribe to Azure Service Health alerts, monitor Defender for Cloud recommendations",
+      "evidence_artifacts": [
+        "Service Health alert subscriptions",
+        "Security recommendation review logs"
+      ],
+      "authoritative_source": "https://learn.microsoft.com/en-us/azure/service-health/"
+    }
+  ],
+  "summary": {
+    "total_controls_mapped": 18,
+    "inherited_count": 1,
+    "shared_count": 15,
+    "customer_count": 2,
+    "coverage_percentage": 16.4
+  },
+  "notes": "Azure Government provides strong platform-level security capabilities with shared responsibility for most controls. Customer must actively configure security features rather than relying on defaults.",
+  "last_updated": "2024-01-15"
+}

@@ -42,7 +42,6 @@ venv.bak/
 .DS_Store
 
 # Docker
-data/
 logs/
 *.log
 
@@ -65,20 +64,14 @@ backups/
 htmlcov/
 .pytest_cache/
 
-# MinIO data
+# Runtime data directories (exclude from git)
 data/minio/
-
-# PostgreSQL data
 data/postgres/
-
-# Redis data
 data/redis/
-
-# Evidence files (development)
 data/evidence/
-
-# CISO Assistant media
 data/ciso-assistant/
+
+# NOTE: data/provider_mappings/ contains reference data and IS committed to git
 
 # Nginx logs
 logs/nginx/

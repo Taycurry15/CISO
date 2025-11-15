@@ -1,0 +1,287 @@
+{
+  "provider_name": "AWS GovCloud (US)",
+  "provider_type": "IaaS/PaaS",
+  "description": "Amazon Web Services GovCloud regions designed for U.S. government agencies and contractors with strict regulatory requirements",
+  "certification_level": "FedRAMP High, DoD IL5",
+  "documentation_url": "https://aws.amazon.com/govcloud-us/",
+  "control_mappings": [
+    {
+      "control_id": "AC.L2-3.1.1",
+      "control_title": "Authorized Access Control",
+      "responsibility": "Shared",
+      "aws_responsibility": "AWS provides IAM for identity and access management across AWS services",
+      "customer_responsibility": "Customer configures IAM policies, roles, and users to control access to resources",
+      "inherited_controls": [],
+      "implementation_guidance": "Use IAM policies with least privilege, implement MFA, use IAM roles for applications",
+      "evidence_artifacts": [
+        "IAM policy documents",
+        "IAM role configurations",
+        "IAM user access review"
+      ],
+      "authoritative_source": "https://docs.aws.amazon.com/IAM/latest/UserGuide/"
+    },
+    {
+      "control_id": "AC.L2-3.1.3",
+      "control_title": "External Connections",
+      "responsibility": "Shared",
+      "aws_responsibility": "AWS provides VPC, security groups, and Direct Connect for controlled connectivity",
+      "customer_responsibility": "Customer configures VPC, security groups, NACLs, and network connections",
+      "inherited_controls": [],
+      "implementation_guidance": "Use security groups and NACLs, implement AWS Network Firewall, use Direct Connect for dedicated links",
+      "evidence_artifacts": [
+        "VPC configuration",
+        "Security group rules",
+        "NACL configurations",
+        "Direct Connect setup"
+      ],
+      "authoritative_source": "https://docs.aws.amazon.com/vpc/"
+    },
+    {
+      "control_id": "AU.L2-3.3.1",
+      "control_title": "System Audit Logs",
+      "responsibility": "Shared",
+      "aws_responsibility": "AWS provides CloudTrail for API logging and service-specific logs",
+      "customer_responsibility": "Customer enables CloudTrail, configures log retention, and analyzes logs",
+      "inherited_controls": [],
+      "implementation_guidance": "Enable CloudTrail for all regions, configure S3 bucket for log storage, enable log file validation",
+      "evidence_artifacts": [
+        "CloudTrail trail configuration",
+        "S3 bucket logging settings",
+        "Log file validation status"
+      ],
+      "authoritative_source": "https://docs.aws.amazon.com/cloudtrail/"
+    },
+    {
+      "control_id": "AU.L2-3.3.9",
+      "control_title": "Audit Log Protection",
+      "responsibility": "Shared",
+      "aws_responsibility": "AWS protects platform audit logs with encryption and access controls",
+      "customer_responsibility": "Customer protects CloudTrail logs with S3 bucket policies and encryption",
+      "inherited_controls": [],
+      "implementation_guidance": "Enable S3 bucket encryption, use S3 Object Lock for immutability, restrict bucket access with IAM",
+      "evidence_artifacts": [
+        "S3 bucket encryption configuration",
+        "S3 Object Lock settings",
+        "S3 bucket access policies"
+      ],
+      "authoritative_source": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html"
+    },
+    {
+      "control_id": "CM.L2-3.4.1",
+      "control_title": "Baseline Configuration",
+      "responsibility": "Shared",
+      "aws_responsibility": "AWS maintains secure baseline configurations for platform services",
+      "customer_responsibility": "Customer establishes configuration baselines for EC2 instances and services",
+      "inherited_controls": [],
+      "implementation_guidance": "Use AWS Config to track configuration baselines, leverage AWS Service Catalog for approved configurations",
+      "evidence_artifacts": [
+        "AWS Config rules",
+        "Service Catalog portfolios",
+        "Configuration baseline documentation"
+      ],
+      "authoritative_source": "https://docs.aws.amazon.com/config/"
+    },
+    {
+      "control_id": "CM.L2-3.4.2",
+      "control_title": "Security Configuration Settings",
+      "responsibility": "Shared",
+      "aws_responsibility": "AWS provides security configuration capabilities via AWS Config and Security Hub",
+      "customer_responsibility": "Customer configures and enforces security settings using AWS Config and Security Hub",
+      "inherited_controls": [],
+      "implementation_guidance": "Enable Security Hub, implement Config rules for security settings, use Systems Manager for enforcement",
+      "evidence_artifacts": [
+        "Security Hub findings",
+        "AWS Config compliance reports",
+        "Systems Manager compliance dashboard"
+      ],
+      "authoritative_source": "https://docs.aws.amazon.com/securityhub/"
+    },
+    {
+      "control_id": "CM.L2-3.4.7",
+      "control_title": "Nonessential Programs and Functions",
+      "responsibility": "Customer",
+      "aws_responsibility": null,
+      "customer_responsibility": "Customer restricts nonessential programs on EC2 instances",
+      "inherited_controls": [],
+      "implementation_guidance": "Harden AMIs, use minimal base images, implement application whitelisting",
+      "evidence_artifacts": [
+        "AMI hardening procedures",
+        "EC2 instance configurations",
+        "Application control policies"
+      ],
+      "authoritative_source": null
+    },
+    {
+      "control_id": "IA.L2-3.5.3",
+      "control_title": "Multi-Factor Authentication",
+      "responsibility": "Shared",
+      "aws_responsibility": "AWS provides MFA capabilities for IAM users and root account",
+      "customer_responsibility": "Customer enforces MFA for all privileged and remote access",
+      "inherited_controls": [],
+      "implementation_guidance": "Require MFA for all IAM users, enable MFA for root account, use hardware MFA tokens for high-privilege users",
+      "evidence_artifacts": [
+        "IAM MFA configuration status",
+        "MFA enforcement policies",
+        "MFA device inventory"
+      ],
+      "authoritative_source": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa.html"
+    },
+    {
+      "control_id": "IA.L2-3.5.7",
+      "control_title": "Cryptographic Module Authentication",
+      "responsibility": "Inherited",
+      "aws_responsibility": "AWS uses FIPS 140-2 validated cryptographic modules in GovCloud",
+      "customer_responsibility": null,
+      "inherited_controls": ["IA.L2-3.5.7"],
+      "implementation_guidance": "No customer action required - inherent in AWS GovCloud",
+      "evidence_artifacts": [
+        "AWS FIPS 140-2 validation documentation"
+      ],
+      "authoritative_source": "https://aws.amazon.com/compliance/fips/"
+    },
+    {
+      "control_id": "IR.L2-3.6.1",
+      "control_title": "Incident Response",
+      "responsibility": "Shared",
+      "aws_responsibility": "AWS provides incident detection via GuardDuty and Security Hub",
+      "customer_responsibility": "Customer implements incident response procedures and uses AWS tools for detection",
+      "inherited_controls": [],
+      "implementation_guidance": "Enable GuardDuty, configure Security Hub, use EventBridge for automated responses",
+      "evidence_artifacts": [
+        "Incident response plan",
+        "GuardDuty configuration",
+        "Security Hub automation rules"
+      ],
+      "authoritative_source": "https://docs.aws.amazon.com/guardduty/"
+    },
+    {
+      "control_id": "SC.L2-3.13.1",
+      "control_title": "Boundary Protection",
+      "responsibility": "Shared",
+      "aws_responsibility": "AWS implements network boundary protection for infrastructure",
+      "customer_responsibility": "Customer implements boundary protection via VPC, security groups, and NACLs",
+      "inherited_controls": [],
+      "implementation_guidance": "Segment networks using VPCs and subnets, deploy Network Firewall, use security groups for micro-segmentation",
+      "evidence_artifacts": [
+        "VPC architecture diagram",
+        "Security group configurations",
+        "Network Firewall rules"
+      ],
+      "authoritative_source": "https://docs.aws.amazon.com/network-firewall/"
+    },
+    {
+      "control_id": "SC.L2-3.13.8",
+      "control_title": "Transmission Confidentiality",
+      "responsibility": "Shared",
+      "aws_responsibility": "AWS enforces TLS for management plane connections",
+      "customer_responsibility": "Customer configures TLS for application load balancers and data transfer",
+      "inherited_controls": [],
+      "implementation_guidance": "Use ALB with TLS listeners, configure TLS 1.2+ policies, use ACM for certificate management",
+      "evidence_artifacts": [
+        "Load balancer TLS configuration",
+        "TLS policy settings",
+        "ACM certificate inventory"
+      ],
+      "authoritative_source": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html"
+    },
+    {
+      "control_id": "SC.L2-3.13.11",
+      "control_title": "Cryptographic Protection",
+      "responsibility": "Shared",
+      "aws_responsibility": "AWS provides encryption capabilities using FIPS 140-2 validated modules",
+      "customer_responsibility": "Customer enables encryption for data at rest and in transit",
+      "inherited_controls": [],
+      "implementation_guidance": "Enable EBS encryption, use S3 encryption, enable RDS encryption, use KMS for key management",
+      "evidence_artifacts": [
+        "EBS encryption status",
+        "S3 bucket encryption settings",
+        "RDS encryption configuration",
+        "KMS key policies"
+      ],
+      "authoritative_source": "https://docs.aws.amazon.com/kms/"
+    },
+    {
+      "control_id": "SC.L2-3.13.16",
+      "control_title": "Data at Rest Protection",
+      "responsibility": "Shared",
+      "aws_responsibility": "AWS provides platform-level encryption for data at rest",
+      "customer_responsibility": "Customer enables encryption for EBS volumes, S3 buckets, and databases",
+      "inherited_controls": [],
+      "implementation_guidance": "Enable default EBS encryption, use S3 default encryption, enable RDS encryption for new databases",
+      "evidence_artifacts": [
+        "Account-level EBS encryption setting",
+        "S3 default encryption configuration",
+        "RDS database encryption status"
+      ],
+      "authoritative_source": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html"
+    },
+    {
+      "control_id": "SI.L2-3.14.1",
+      "control_title": "Flaw Remediation",
+      "responsibility": "Shared",
+      "aws_responsibility": "AWS patches platform services and infrastructure",
+      "customer_responsibility": "Customer patches EC2 instances and container images using Systems Manager Patch Manager",
+      "inherited_controls": [],
+      "implementation_guidance": "Enable Systems Manager Patch Manager, configure maintenance windows, use automated patching",
+      "evidence_artifacts": [
+        "Patch Manager configuration",
+        "Patch compliance reports",
+        "Maintenance window schedules"
+      ],
+      "authoritative_source": "https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-patch.html"
+    },
+    {
+      "control_id": "SI.L2-3.14.2",
+      "control_title": "Malicious Code Protection",
+      "responsibility": "Customer",
+      "aws_responsibility": null,
+      "customer_responsibility": "Customer implements anti-malware on EC2 instances",
+      "inherited_controls": [],
+      "implementation_guidance": "Deploy anti-malware agents to EC2 instances, use GuardDuty for threat detection",
+      "evidence_artifacts": [
+        "Anti-malware deployment configuration",
+        "GuardDuty findings",
+        "Malware scan results"
+      ],
+      "authoritative_source": "https://docs.aws.amazon.com/guardduty/"
+    },
+    {
+      "control_id": "SI.L2-3.14.4",
+      "control_title": "Update Malicious Code Protection",
+      "responsibility": "Customer",
+      "aws_responsibility": null,
+      "customer_responsibility": "Customer ensures anti-malware definitions are updated",
+      "inherited_controls": [],
+      "implementation_guidance": "Configure automatic definition updates for anti-malware, monitor update status",
+      "evidence_artifacts": [
+        "Anti-malware update configuration",
+        "Definition update logs"
+      ],
+      "authoritative_source": null
+    },
+    {
+      "control_id": "SI.L2-3.14.5",
+      "control_title": "System Monitoring",
+      "responsibility": "Shared",
+      "aws_responsibility": "AWS provides CloudWatch for monitoring and GuardDuty for threat detection",
+      "customer_responsibility": "Customer configures monitoring, sets alarms, and responds to findings",
+      "inherited_controls": [],
+      "implementation_guidance": "Configure CloudWatch alarms, enable GuardDuty, use Security Hub for centralized monitoring",
+      "evidence_artifacts": [
+        "CloudWatch alarm configuration",
+        "GuardDuty enablement status",
+        "Security Hub dashboard"
+      ],
+      "authoritative_source": "https://docs.aws.amazon.com/cloudwatch/"
+    }
+  ],
+  "summary": {
+    "total_controls_mapped": 18,
+    "inherited_count": 1,
+    "shared_count": 14,
+    "customer_count": 3,
+    "coverage_percentage": 16.4
+  },
+  "notes": "AWS GovCloud provides strong infrastructure security with shared responsibility model. Customer has more responsibility for configuring security features compared to SaaS offerings.",
+  "last_updated": "2024-01-15"
+}
