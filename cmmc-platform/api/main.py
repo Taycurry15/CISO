@@ -13,6 +13,13 @@ import asyncpg
 import asyncio
 from pathlib import Path
 import logging
+import os
+
+# Import AI and RAG services
+from services.embedding_service import EmbeddingService, EmbeddingModel
+from services.document_processor import DocumentProcessor, ChunkingStrategy
+from services.ai_analysis import AIAnalysisService, AIModel, FindingStatus
+from services.rag_engine import RAGEngine
 
 # Initialize FastAPI
 app = FastAPI(
@@ -60,6 +67,101 @@ async def get_db():
     pool = await get_db_pool()
     async with pool.acquire() as conn:
         yield conn
+
+# ============================================================================
+# AI/RAG SERVICES (Global Instances)
+# ============================================================================
+
+# Global service instances (initialized on first use)
+_embedding_service = None
+_document_processor = None
+_rag_engine = None
+_ai_analysis_service = None
+
+async def get_embedding_service() -> EmbeddingService:
+    """Get or create embedding service instance"""
+    global _embedding_service
+    if _embedding_service is None:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            logger.warning("OPENAI_API_KEY not set - embedding features will be disabled")
+            raise HTTPException(
+                status_code=503,
+                detail="AI features not configured. Please set OPENAI_API_KEY environment variable."
+            )
+        _embedding_service = EmbeddingService(
+            model=EmbeddingModel.OPENAI_3_SMALL,  # Cheaper and faster
+            api_key=api_key
+        )
+        logger.info("Initialized EmbeddingService")
+    return _embedding_service
+
+async def get_document_processor() -> DocumentProcessor:
+    """Get or create document processor instance"""
+    global _document_processor
+    if _document_processor is None:
+        _document_processor = DocumentProcessor(
+            chunk_size=512,
+            chunk_overlap=50,
+            chunking_strategy=ChunkingStrategy.HYBRID
+        )
+        logger.info("Initialized DocumentProcessor")
+    return _document_processor
+
+async def get_rag_engine() -> RAGEngine:
+    """Get or create RAG engine instance"""
+    global _rag_engine
+    if _rag_engine is None:
+        pool = await get_db_pool()
+        embedding_service = await get_embedding_service()
+        _rag_engine = RAGEngine(
+            db_pool=pool,
+            embedding_service=embedding_service
+        )
+        logger.info("Initialized RAGEngine")
+    return _rag_engine
+
+async def get_ai_analysis_service() -> AIAnalysisService:
+    """Get or create AI analysis service instance"""
+    global _ai_analysis_service
+    if _ai_analysis_service is None:
+        # Check for API keys
+        openai_key = os.getenv("OPENAI_API_KEY")
+        anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+
+        if not openai_key and not anthropic_key:
+            logger.warning("No AI API keys configured - AI analysis will be disabled")
+            raise HTTPException(
+                status_code=503,
+                detail="AI features not configured. Please set OPENAI_API_KEY or ANTHROPIC_API_KEY."
+            )
+
+        pool = await get_db_pool()
+        rag_engine = await get_rag_engine()
+
+        # Import confidence scorer
+        from services.confidence_scorer import ConfidenceScorer
+        confidence_scorer = ConfidenceScorer(db_pool=pool)
+
+        # Choose model based on available API keys
+        if openai_key:
+            primary_model = AIModel.GPT4_TURBO
+            fallback_model = AIModel.CLAUDE_35_SONNET if anthropic_key else None
+        else:
+            primary_model = AIModel.CLAUDE_35_SONNET
+            fallback_model = None
+
+        _ai_analysis_service = AIAnalysisService(
+            db_pool=pool,
+            rag_engine=rag_engine,
+            confidence_scorer=confidence_scorer,
+            primary_model=primary_model,
+            fallback_model=fallback_model,
+            openai_api_key=openai_key,
+            anthropic_api_key=anthropic_key
+        )
+        logger.info(f"Initialized AIAnalysisService with {primary_model}")
+    return _ai_analysis_service
 
 # ============================================================================
 # PYDANTIC MODELS
@@ -247,11 +349,20 @@ async def chunk_document(text: str, max_chunk_size: int = 1000) -> List[str]:
     return chunks
 
 async def generate_embedding(text: str) -> List[float]:
-    """Generate vector embedding for semantic search"""
-    # Placeholder - integrate with OpenAI, Cohere, or local model
-    # For now, return dummy embedding
-    logger.warning("Using placeholder embedding - integrate with actual embedding service")
-    return [0.0] * 1536  # ada-002 dimension
+    """Generate vector embedding for semantic search using OpenAI"""
+    try:
+        embedding_service = await get_embedding_service()
+        result = await embedding_service.embed_text(text)
+        logger.info(f"Generated {result.dimensions}-dim embedding ({result.tokens_used} tokens)")
+        return result.embedding
+    except HTTPException:
+        # API key not configured
+        raise
+    except Exception as e:
+        logger.error(f"Embedding generation failed: {e}")
+        # Return zero vector as fallback (but log the error)
+        logger.warning("Falling back to zero vector - search will not work correctly!")
+        return [0.0] * 1536
 
 async def analyze_control_with_ai(
     control_id: str,
@@ -285,38 +396,73 @@ async def analyze_control_with_ai(
         "has_diagram_context": graph_context is not None
     }
     
-    # In production, call actual AI model (GPT-4, Claude, etc.)
-    # For now, return mock analysis
-    logger.warning("Using mock AI analysis - integrate with actual AI service")
-    
-    # Simple heuristic: if we have evidence, mark as Met
-    if len(evidence_items) >= 2:
-        status = "Met"
-        confidence = 85.0
-        narrative = f"The organization has demonstrated compliance with {control_id}. "
+    # Use real AI analysis service
+    try:
+        ai_service = await get_ai_analysis_service()
+
+        # Convert provider_inheritance dict to ProviderInheritance object if present
+        from services.ai_analysis import ProviderInheritance
+        provider_obj = None
         if provider_inheritance:
-            narrative += f"This control leverages {provider_inheritance['provider_name']} inheritance for {provider_inheritance['responsibility']} responsibilities. "
-        narrative += f"Evidence review shows {len(evidence_items)} supporting artifacts."
-    else:
-        status = "Not Met"
-        confidence = 60.0
-        narrative = f"Insufficient evidence to demonstrate compliance with {control_id}. "
-        narrative += f"Only {len(evidence_items)} evidence item(s) provided. Additional documentation required."
-    
-    rationale = f"Analysis based on {len(evidence_items)} evidence items, "
-    if provider_inheritance:
-        rationale += "provider inheritance documentation, "
-    if graph_context:
-        rationale += "system architecture context, "
-    rationale += f"and assessment objective {objective_id or 'general'}."
-    
-    return {
-        "status": status,
-        "confidence_score": confidence,
-        "narrative": narrative,
-        "rationale": rationale,
-        "evidence_ids": [e["id"] for e in evidence_items]
-    }
+            provider_obj = ProviderInheritance(
+                provider_name=provider_inheritance.get('provider_name', 'Unknown'),
+                responsibility=provider_inheritance.get('responsibility', 'Shared'),
+                inherited_controls=provider_inheritance.get('inherited_controls', []),
+                documentation_url=provider_inheritance.get('documentation_url'),
+                narrative=provider_inheritance.get('narrative')
+            )
+
+        # Call AI analysis service
+        logger.info(f"Running AI analysis for control {control_id} with {len(evidence_items)} evidence items")
+        result = await ai_service.analyze_control(
+            control_id=control_id,
+            objective_id=objective_id,
+            evidence_items=evidence_items,
+            provider_inheritance=provider_obj
+        )
+
+        return {
+            "status": result.status.value,
+            "confidence_score": result.ai_confidence_score,
+            "narrative": result.assessor_narrative,
+            "rationale": result.ai_rationale,
+            "evidence_ids": [ref.evidence_id for ref in result.evidence_references],
+            "model_used": result.model_used,
+            "tokens_used": result.tokens_used,
+            "requires_review": result.requires_human_review
+        }
+
+    except HTTPException:
+        # API key not configured - return error
+        raise
+    except Exception as e:
+        logger.error(f"AI analysis failed: {e}")
+        # Fallback to simple heuristic
+        logger.warning("AI analysis failed, using simple heuristic")
+
+        if len(evidence_items) >= 2:
+            status = "Met"
+            confidence = 75.0
+            narrative = f"The organization has provided {len(evidence_items)} evidence items for {control_id}. "
+            if provider_inheritance:
+                narrative += f"This control leverages {provider_inheritance.get('provider_name', 'provider')} inheritance. "
+            narrative += "AI analysis unavailable - manual review recommended."
+        else:
+            status = "Not Met"
+            confidence = 50.0
+            narrative = f"Only {len(evidence_items)} evidence item(s) provided for {control_id}. "
+            narrative += "Additional documentation required. AI analysis unavailable - manual review required."
+
+        return {
+            "status": status,
+            "confidence_score": confidence,
+            "narrative": narrative,
+            "rationale": "AI analysis unavailable. Heuristic-based assessment pending manual review.",
+            "evidence_ids": [e["id"] for e in evidence_items],
+            "model_used": "heuristic-fallback",
+            "tokens_used": 0,
+            "requires_review": True
+        }
 
 # ============================================================================
 # API ENDPOINTS
@@ -385,11 +531,24 @@ async def ingest_document(
     )
     
     chunks_created = 0
-    
+
     if request.auto_chunk:
-        # TODO: Actual text extraction from PDF/DOCX
-        # For now, use placeholder
-        text = "Placeholder text content"
+        # Use real document processor for text extraction
+        try:
+            import json
+            doc_processor = await get_document_processor()
+
+            # Extract text from file based on type
+            logger.info(f"Processing document: {file_path}")
+            processed_doc = doc_processor.process_document(str(file_path))
+
+            logger.info(f"Extracted {len(processed_doc.chunks)} chunks from document")
+            text = "\n\n".join([chunk.text for chunk in processed_doc.chunks])  # For fallback
+
+        except Exception as e:
+            logger.error(f"Document processing failed: {e}")
+            logger.warning("Falling back to placeholder text")
+            text = "Document processing unavailable - manual text entry required"
         
         chunks = await chunk_document(text)
         
