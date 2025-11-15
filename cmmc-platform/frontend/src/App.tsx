@@ -9,6 +9,7 @@ import { Evidence } from './pages/Evidence';
 import { Reports } from './pages/Reports';
 import { BulkOperations } from './pages/BulkOperations';
 import { Settings } from './pages/Settings';
+import { Integrations } from './pages/Integrations';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ function App() {
             <Route path="/evidence/:assessmentId" element={<Evidence />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/bulk" element={<BulkOperations />} />
+            <Route path="/integrations" element={<Integrations />} />
             <Route path="/analytics" element={<Dashboard />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
