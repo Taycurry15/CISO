@@ -30,6 +30,7 @@ from ai_cost_api import router as ai_cost_router
 from ai_budget_api import router as ai_budget_router
 from ai_report_api import router as ai_report_router
 from ai_forecast_api import router as ai_forecast_router
+from hitl_review_api import router as hitl_review_router
 
 # Configure logging
 logging.basicConfig(
@@ -99,6 +100,7 @@ import ai_cost_api
 import ai_budget_api
 import ai_report_api
 import ai_forecast_api
+import hitl_review_api
 from middleware import auth_middleware
 
 # Override their placeholder dependencies with the real database pool
@@ -111,6 +113,7 @@ app.dependency_overrides[ai_cost_api.get_db_pool] = get_db_pool
 app.dependency_overrides[ai_budget_api.get_db_pool] = get_db_pool
 app.dependency_overrides[ai_report_api.get_db_pool] = get_db_pool
 app.dependency_overrides[ai_forecast_api.get_db_pool] = get_db_pool
+app.dependency_overrides[hitl_review_api.get_db_pool] = get_db_pool
 app.dependency_overrides[auth_middleware.get_db_pool] = get_db_pool
 
 logger.info("Database dependencies wired successfully")
@@ -159,6 +162,7 @@ app.include_router(ai_cost_router, prefix="/api/v1/ai", tags=["ai-costs"])
 app.include_router(ai_budget_router, prefix="/api/v1/ai", tags=["ai-budgets"])
 app.include_router(ai_report_router, prefix="/api/v1/ai", tags=["ai-reports"])
 app.include_router(ai_forecast_router, prefix="/api/v1/ai", tags=["ai-forecasting"])
+app.include_router(hitl_review_router, prefix="/api/v1", tags=["hitl-reviews"])
 
 
 # Exception handlers
