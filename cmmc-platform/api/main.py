@@ -20,7 +20,8 @@ from services.embedding_service import EmbeddingService, EmbeddingModel
 from services.document_processor import DocumentProcessor, ChunkingStrategy
 from services.ai_analysis import AIAnalysisService, AIModel, FindingStatus
 from services.rag_engine import RAGEngine
-from services.ai_cost_service import AICostService
+from services.ai_cost_service import AICostService, set_budget_service
+from services.ai_budget_service import AIBudgetService
 
 # Initialize FastAPI
 app = FastAPI(
@@ -79,6 +80,7 @@ _document_processor = None
 _rag_engine = None
 _ai_analysis_service = None
 _ai_cost_service = None
+_ai_budget_service = None
 
 async def get_embedding_service() -> EmbeddingService:
     """Get or create embedding service instance"""
@@ -173,11 +175,31 @@ async def get_ai_cost_service() -> Optional[AICostService]:
             pool = await get_db_pool()
             _ai_cost_service = AICostService(db_pool=pool)
             logger.info("Initialized AICostService")
+
+            # Wire budget service for cost tracking
+            budget_service = await get_ai_budget_service()
+            if budget_service:
+                set_budget_service(budget_service)
+                logger.info("Wired budget service to cost tracking")
         except Exception as e:
             logger.error(f"Failed to initialize AICostService: {e}")
             # Return None - cost tracking is optional
             return None
     return _ai_cost_service
+
+async def get_ai_budget_service() -> Optional[AIBudgetService]:
+    """Get or create AI budget service instance"""
+    global _ai_budget_service
+    if _ai_budget_service is None:
+        try:
+            pool = await get_db_pool()
+            _ai_budget_service = AIBudgetService(db_pool=pool)
+            logger.info("Initialized AIBudgetService")
+        except Exception as e:
+            logger.error(f"Failed to initialize AIBudgetService: {e}")
+            # Return None - budget tracking is optional
+            return None
+    return _ai_budget_service
 
 # ============================================================================
 # PYDANTIC MODELS

@@ -27,6 +27,7 @@ from bulk_api import router as bulk_router
 from integration_api import router as integration_router
 from document_management_api import router as document_mgmt_router
 from ai_cost_api import router as ai_cost_router
+from ai_budget_api import router as ai_budget_router
 
 # Configure logging
 logging.basicConfig(
@@ -93,6 +94,7 @@ import provider_api
 import report_api
 import user_api
 import ai_cost_api
+import ai_budget_api
 from middleware import auth_middleware
 
 # Override their placeholder dependencies with the real database pool
@@ -102,6 +104,7 @@ app.dependency_overrides[provider_api.get_db_pool] = get_db_pool
 app.dependency_overrides[report_api.get_db_pool] = get_db_pool
 app.dependency_overrides[user_api.get_db_pool] = get_db_pool
 app.dependency_overrides[ai_cost_api.get_db_pool] = get_db_pool
+app.dependency_overrides[ai_budget_api.get_db_pool] = get_db_pool
 app.dependency_overrides[auth_middleware.get_db_pool] = get_db_pool
 
 logger.info("Database dependencies wired successfully")
@@ -147,6 +150,7 @@ app.include_router(bulk_router, prefix="/api/v1", tags=["bulk"])
 app.include_router(integration_router, prefix="/api/v1", tags=["integrations"])
 app.include_router(document_mgmt_router, prefix="/api/v1", tags=["document-management", "rag"])
 app.include_router(ai_cost_router, prefix="/api/v1/ai", tags=["ai-costs"])
+app.include_router(ai_budget_router, prefix="/api/v1/ai", tags=["ai-budgets"])
 
 
 # Exception handlers

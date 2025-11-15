@@ -12,6 +12,15 @@ import asyncpg
 logger = logging.getLogger(__name__)
 
 
+# Forward declaration for budget service to avoid circular imports
+_budget_service = None
+
+def set_budget_service(budget_service):
+    """Set the budget service instance for cost tracking integration"""
+    global _budget_service
+    _budget_service = budget_service
+
+
 class AICostService:
     """
     Service for tracking AI usage and costs
@@ -117,6 +126,16 @@ class AICostService:
                     f"Logged AI usage: {operation_type} with {model_name} "
                     f"({total_tokens} tokens, ${cost_usd:.6f})"
                 )
+
+                # Check budget alerts if budget service is available
+                if _budget_service:
+                    try:
+                        await _budget_service.check_budget_status(
+                            organization_id=organization_id,
+                            assessment_id=assessment_id
+                        )
+                    except Exception as budget_err:
+                        logger.warning(f"Budget check failed: {budget_err}")
 
                 return str(usage_id)
 
