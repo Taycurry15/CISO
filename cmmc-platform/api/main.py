@@ -20,6 +20,7 @@ from services.embedding_service import EmbeddingService, EmbeddingModel
 from services.document_processor import DocumentProcessor, ChunkingStrategy
 from services.ai_analysis import AIAnalysisService, AIModel, FindingStatus
 from services.rag_engine import RAGEngine
+from services.ai_cost_service import AICostService
 
 # Initialize FastAPI
 app = FastAPI(
@@ -77,6 +78,7 @@ _embedding_service = None
 _document_processor = None
 _rag_engine = None
 _ai_analysis_service = None
+_ai_cost_service = None
 
 async def get_embedding_service() -> EmbeddingService:
     """Get or create embedding service instance"""
@@ -162,6 +164,20 @@ async def get_ai_analysis_service() -> AIAnalysisService:
         )
         logger.info(f"Initialized AIAnalysisService with {primary_model}")
     return _ai_analysis_service
+
+async def get_ai_cost_service() -> Optional[AICostService]:
+    """Get or create AI cost tracking service instance"""
+    global _ai_cost_service
+    if _ai_cost_service is None:
+        try:
+            pool = await get_db_pool()
+            _ai_cost_service = AICostService(db_pool=pool)
+            logger.info("Initialized AICostService")
+        except Exception as e:
+            logger.error(f"Failed to initialize AICostService: {e}")
+            # Return None - cost tracking is optional
+            return None
+    return _ai_cost_service
 
 # ============================================================================
 # PYDANTIC MODELS
@@ -348,12 +364,49 @@ async def chunk_document(text: str, max_chunk_size: int = 1000) -> List[str]:
     
     return chunks
 
-async def generate_embedding(text: str) -> List[float]:
+async def generate_embedding(
+    text: str,
+    organization_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    assessment_id: Optional[str] = None,
+    document_id: Optional[str] = None
+) -> List[float]:
     """Generate vector embedding for semantic search using OpenAI"""
+    import time
+    start_time = time.time()
+
     try:
         embedding_service = await get_embedding_service()
         result = await embedding_service.embed_text(text)
-        logger.info(f"Generated {result.dimensions}-dim embedding ({result.tokens_used} tokens)")
+
+        response_time_ms = int((time.time() - start_time) * 1000)
+        logger.info(f"Generated {result.dimensions}-dim embedding ({result.tokens_used} tokens, {response_time_ms}ms)")
+
+        # Log cost tracking if org/user IDs are available
+        if organization_id and user_id:
+            try:
+                cost_service = await get_ai_cost_service()
+                if cost_service:
+                    cost = cost_service.calculate_cost(
+                        model_name=result.model,
+                        total_tokens=result.tokens_used
+                    )
+                    await cost_service.log_usage(
+                        organization_id=organization_id,
+                        user_id=user_id,
+                        assessment_id=assessment_id,
+                        document_id=document_id,
+                        operation_type='embedding',
+                        model_name=result.model,
+                        provider='openai',
+                        total_tokens=result.tokens_used,
+                        cost_usd=cost,
+                        response_time_ms=response_time_ms,
+                        metadata={'text_length': len(text), 'dimensions': result.dimensions}
+                    )
+            except Exception as cost_err:
+                logger.warning(f"Failed to log embedding cost: {cost_err}")
+
         return result.embedding
     except HTTPException:
         # API key not configured
@@ -370,7 +423,10 @@ async def analyze_control_with_ai(
     evidence_items: List[Dict],
     provider_inheritance: Optional[Dict],
     graph_context: Optional[Dict],
-    conn: asyncpg.Connection
+    conn: asyncpg.Connection,
+    organization_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    assessment_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """Use AI to analyze control compliance based on evidence"""
     
@@ -397,6 +453,7 @@ async def analyze_control_with_ai(
     }
     
     # Use real AI analysis service
+    import time
     try:
         ai_service = await get_ai_analysis_service()
 
@@ -414,12 +471,48 @@ async def analyze_control_with_ai(
 
         # Call AI analysis service
         logger.info(f"Running AI analysis for control {control_id} with {len(evidence_items)} evidence items")
+        start_time = time.time()
         result = await ai_service.analyze_control(
             control_id=control_id,
             objective_id=objective_id,
             evidence_items=evidence_items,
             provider_inheritance=provider_obj
         )
+        response_time_ms = int((time.time() - start_time) * 1000)
+
+        # Log cost tracking if org/user IDs are available
+        if organization_id and user_id:
+            try:
+                cost_service = await get_ai_cost_service()
+                if cost_service:
+                    # Determine provider from model name
+                    provider = 'openai' if 'gpt' in result.model_used.lower() else \
+                              'anthropic' if 'claude' in result.model_used.lower() else 'other'
+
+                    cost = cost_service.calculate_cost(
+                        model_name=result.model_used,
+                        total_tokens=result.tokens_used
+                    )
+                    await cost_service.log_usage(
+                        organization_id=organization_id,
+                        user_id=user_id,
+                        assessment_id=assessment_id,
+                        control_id=control_id,
+                        operation_type='analysis',
+                        model_name=result.model_used,
+                        provider=provider,
+                        total_tokens=result.tokens_used,
+                        cost_usd=cost,
+                        response_time_ms=response_time_ms,
+                        metadata={
+                            'evidence_count': len(evidence_items),
+                            'status': result.status.value,
+                            'confidence': result.ai_confidence_score,
+                            'requires_review': result.requires_human_review
+                        }
+                    )
+            except Exception as cost_err:
+                logger.warning(f"Failed to log AI analysis cost: {cost_err}")
 
         return {
             "status": result.status.value,
