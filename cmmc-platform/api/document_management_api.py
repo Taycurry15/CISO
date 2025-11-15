@@ -15,11 +15,11 @@ from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, Backgro
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from database import Database
+from database import database, get_database, Database
 from services.document_processor import DocumentProcessor, ChunkingStrategy
 from services.embedding_service import EmbeddingService, EmbeddingModel
 from services.rag_engine import RAGEngine, SimilarityMetric, ReRankingStrategy
-from auth_middleware import get_current_user
+from middleware.auth_middleware import get_auth_context, AuthContext
 
 import logging
 
@@ -117,13 +117,8 @@ class DocumentStatsResponse(BaseModel):
 # =============================================================================
 
 async def get_db():
-    """Get database connection"""
-    db = Database()
-    await db.connect()
-    try:
-        yield db
-    finally:
-        await db.disconnect()
+    """Get database connection (uses global database instance)"""
+    return database
 
 
 async def get_document_processor():
@@ -161,7 +156,7 @@ async def upload_document(
     title: Optional[str] = None,
     organization_id: Optional[str] = None,
     assessment_id: Optional[str] = None,
-    current_user: dict = Depends(get_current_user),
+    auth_context: AuthContext = Depends(get_auth_context),
     db: Database = Depends(get_db)
 ):
     """
@@ -206,7 +201,7 @@ async def upload_document(
                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             """, document_id, file.filename, title or file.filename,
                 str(file_path), file_ext[1:], file_size,
-                organization_id, assessment_id, current_user['id'],
+                organization_id, assessment_id, auth_context.user_id,
                 datetime.utcnow(), 'uploaded'
             )
 
@@ -340,7 +335,7 @@ async def process_document(
     request: DocumentProcessRequest,
     background_tasks: BackgroundTasks,
     db: Database = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    auth_context: AuthContext = Depends(get_auth_context)
 ):
     """
     Process an uploaded document: extract text, chunk, and optionally embed
@@ -390,7 +385,7 @@ async def list_documents(
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: Database = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    auth_context: AuthContext = Depends(get_auth_context)
 ):
     """List documents with optional filtering"""
     query = """
@@ -462,7 +457,7 @@ async def list_documents(
 async def delete_document(
     document_id: str,
     db: Database = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    auth_context: AuthContext = Depends(get_auth_context)
 ):
     """Delete a document and its chunks"""
     pool = db.get_pool()
@@ -493,7 +488,7 @@ async def delete_document(
 async def rag_query(
     request: RAGQueryRequest,
     rag_engine: RAGEngine = Depends(get_rag_engine),
-    current_user: dict = Depends(get_current_user)
+    auth_context: AuthContext = Depends(get_auth_context)
 ):
     """
     Query documents using RAG (Retrieval-Augmented Generation)
@@ -545,7 +540,7 @@ async def rag_query(
 @router.get("/rag/stats", response_model=DocumentStatsResponse)
 async def get_rag_stats(
     rag_engine: RAGEngine = Depends(get_rag_engine),
-    current_user: dict = Depends(get_current_user)
+    auth_context: AuthContext = Depends(get_auth_context)
 ):
     """Get RAG system statistics"""
     try:

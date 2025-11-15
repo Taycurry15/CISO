@@ -13,7 +13,7 @@ import logging
 from config import settings
 
 # Import database
-from database import Database
+from database import Database, get_db_pool, get_database
 
 # Import API routers
 from user_api import router as user_router
@@ -78,6 +78,30 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ============================================================================
+# Database Dependency Injection
+# ============================================================================
+# Wire the global database instance to all API modules that need it
+# This fixes the "Database pool dependency not configured" errors
+
+# Import the broken get_db_pool functions from each module
+import assessment_api
+import dashboard_api
+import provider_api
+import report_api
+import user_api
+from middleware import auth_middleware
+
+# Override their placeholder dependencies with the real database pool
+app.dependency_overrides[assessment_api.get_db_pool] = get_db_pool
+app.dependency_overrides[dashboard_api.get_db_pool] = get_db_pool
+app.dependency_overrides[provider_api.get_db_pool] = get_db_pool
+app.dependency_overrides[report_api.get_db_pool] = get_db_pool
+app.dependency_overrides[user_api.get_db_pool] = get_db_pool
+app.dependency_overrides[auth_middleware.get_db_pool] = get_db_pool
+
+logger.info("Database dependencies wired successfully")
 
 # Health check endpoint
 @app.get("/health")

@@ -178,9 +178,9 @@ async def get_user_service(db_pool: asyncpg.Pool = Depends(get_db_pool)) -> User
 
 async def get_auth_service() -> AuthService:
     """Get auth service"""
-    # Secret key should come from environment
-    secret_key = "your-secret-key-here"  # TODO: Load from env
-    return AuthService(secret_key)
+    # Load secret key from configuration
+    from config import settings
+    return AuthService(settings.jwt_secret_key)
 
 
 async def get_organization_service(db_pool: asyncpg.Pool = Depends(get_db_pool)) -> OrganizationService:
@@ -451,6 +451,38 @@ async def refresh_token(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Token refresh failed"
         )
+
+
+@router.get("/auth/me", response_model=UserResponse)
+async def get_current_user_auth(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get current user (auth endpoint for frontend compatibility)
+
+    This endpoint provides the same functionality as /users/me but matches
+    the frontend's expected auth endpoint pattern.
+    """
+    return UserResponse(**current_user)
+
+
+@router.post("/auth/logout")
+async def logout():
+    """
+    Logout (JWT stateless)
+
+    Since JWT tokens are stateless, logout is handled client-side by
+    discarding the tokens. This endpoint confirms successful logout intent.
+
+    For enhanced security in production, consider:
+    - Token blacklisting with Redis
+    - Short-lived access tokens
+    - Refresh token rotation
+    """
+    return {
+        "success": True,
+        "message": "Logged out successfully. Please discard your tokens."
+    }
 
 
 # ============================================================================

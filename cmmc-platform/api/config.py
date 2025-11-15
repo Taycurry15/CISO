@@ -6,7 +6,7 @@ Loads settings from environment variables with fallback defaults
 import os
 from typing import List
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, validator
 
 
 class Settings(BaseSettings):
@@ -91,6 +91,25 @@ class Settings(BaseSettings):
         default="dev-session-secret",
         alias="SESSION_SECRET_KEY"
     )
+
+    @validator('jwt_secret_key')
+    def validate_jwt_secret(cls, v, values):
+        """Validate JWT secret is secure in production"""
+        environment = values.get('environment', 'development')
+
+        # Allow dev secret in development mode only
+        if environment == 'production':
+            if v == "dev-secret-key-change-in-production":
+                raise ValueError(
+                    "CRITICAL SECURITY ERROR: JWT_SECRET_KEY must be changed in production! "
+                    "Generate a secure secret with: openssl rand -hex 32"
+                )
+            if len(v) < 32:
+                raise ValueError(
+                    "JWT_SECRET_KEY must be at least 32 characters for production use"
+                )
+
+        return v
 
     class Config:
         env_file = ".env"

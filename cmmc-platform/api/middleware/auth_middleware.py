@@ -136,12 +136,11 @@ async def get_auth_service() -> AuthService:
     """
     Get auth service
 
-    Override this dependency in main.py with proper configuration.
+    Loads JWT secret from application configuration.
     """
-    # Secret key should come from environment
-    import os
-    secret_key = os.getenv('JWT_SECRET_KEY', 'your-secret-key-here')
-    return AuthService(secret_key)
+    # Load secret key from configuration (validates on startup)
+    from config import settings
+    return AuthService(settings.jwt_secret_key)
 
 
 async def get_user_service(db_pool: asyncpg.Pool = Depends(get_db_pool)) -> UserService:

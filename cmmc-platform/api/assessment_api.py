@@ -324,14 +324,14 @@ async def get_assessment(
         raise HTTPException(status_code=500, detail=f"Failed to get assessment: {str(e)}")
 
 
-@router.put("/{assessment_id}/status")
+@router.patch("/{assessment_id}/status")
 async def update_assessment_status(
     assessment_id: str,
     request: UpdateAssessmentStatusRequest,
     service: AssessmentService = Depends(get_assessment_service)
 ):
     """
-    Update assessment status
+    Update assessment status (PATCH for partial update)
 
     Valid status transitions:
     - Draft → Scoping → In Progress → Review → Completed
@@ -339,7 +339,7 @@ async def update_assessment_status(
 
     **Example:**
     ```json
-    PUT /api/v1/assessments/uuid/status
+    PATCH /api/v1/assessments/uuid/status
     {
       "status": "In Progress"
     }
