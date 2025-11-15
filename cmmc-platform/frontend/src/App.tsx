@@ -3,6 +3,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
+import { Assessments } from './pages/Assessments';
+import { Controls } from './pages/Controls';
+import { Evidence } from './pages/Evidence';
+import { Reports } from './pages/Reports';
+import { BulkOperations } from './pages/BulkOperations';
+import { Settings } from './pages/Settings';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,14 +32,16 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            {/* Additional routes will be added here */}
-            <Route path="/assessments" element={<Dashboard />} />
-            <Route path="/controls" element={<Dashboard />} />
-            <Route path="/evidence" element={<Dashboard />} />
-            <Route path="/reports" element={<Dashboard />} />
-            <Route path="/bulk" element={<Dashboard />} />
+            <Route path="/assessments" element={<Assessments />} />
+            <Route path="/assessments/:id" element={<Dashboard />} />
+            <Route path="/controls" element={<Controls />} />
+            <Route path="/controls/:assessmentId" element={<Controls />} />
+            <Route path="/evidence" element={<Evidence />} />
+            <Route path="/evidence/:assessmentId" element={<Evidence />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/bulk" element={<BulkOperations />} />
             <Route path="/analytics" element={<Dashboard />} />
-            <Route path="/settings" element={<Dashboard />} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
 
           {/* 404 Route */}
