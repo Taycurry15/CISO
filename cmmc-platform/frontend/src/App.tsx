@@ -10,6 +10,7 @@ import { Reports } from './pages/Reports';
 import { BulkOperations } from './pages/BulkOperations';
 import { Settings } from './pages/Settings';
 import { Integrations } from './pages/Integrations';
+import { DocumentManagement } from './pages/DocumentManagement';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +43,7 @@ function App() {
             <Route path="/reports" element={<Reports />} />
             <Route path="/bulk" element={<BulkOperations />} />
             <Route path="/integrations" element={<Integrations />} />
+            <Route path="/documents" element={<DocumentManagement />} />
             <Route path="/analytics" element={<Dashboard />} />
             <Route path="/settings" element={<Settings />} />
           </Route>

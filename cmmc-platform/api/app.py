@@ -25,6 +25,7 @@ from report_api import router as report_router
 from dashboard_api import router as dashboard_router
 from bulk_api import router as bulk_router
 from integration_api import router as integration_router
+from document_management_api import router as document_mgmt_router
 
 # Configure logging
 logging.basicConfig(
@@ -117,6 +118,7 @@ app.include_router(report_router, prefix="/api/v1", tags=["reports"])
 app.include_router(dashboard_router, prefix="/api/v1", tags=["dashboard"])
 app.include_router(bulk_router, prefix="/api/v1", tags=["bulk"])
 app.include_router(integration_router, prefix="/api/v1", tags=["integrations"])
+app.include_router(document_mgmt_router, prefix="/api/v1", tags=["document-management", "rag"])
 
 
 # Exception handlers

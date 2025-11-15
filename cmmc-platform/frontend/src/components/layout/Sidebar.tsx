@@ -9,6 +9,7 @@ import {
   Settings,
   BarChart3,
   Upload,
+  BookOpen,
 } from 'lucide-react';
 
 interface NavItem {
@@ -43,6 +44,11 @@ const navItems: NavItem[] = [
     name: 'Reports',
     path: '/reports',
     icon: <FileText className="w-5 h-5" />,
+  },
+  {
+    name: 'Documents',
+    path: '/documents',
+    icon: <BookOpen className="w-5 h-5" />,
   },
   {
     name: 'Bulk Operations',
