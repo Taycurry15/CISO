@@ -1,0 +1,56 @@
+# Web Framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.6.0
+pydantic-settings==2.1.0
+
+# Database
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.25
+
+# Cache & Task Queue
+redis==5.0.1
+celery==5.3.6
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# AI/ML APIs
+openai==1.12.0
+anthropic==0.18.1
+
+# Object Storage
+minio==7.2.3
+
+# Document Processing
+pypdf2==3.0.1
+python-docx==1.1.0
+openpyxl==3.1.2
+pillow==10.2.0
+
+# Vector & ML
+numpy==1.26.4
+pgvector==0.2.4
+
+# HTTP & Integrations
+httpx==0.26.0
+aiohttp==3.9.3
+requests==2.31.0
+
+# Utilities
+python-dotenv==1.0.1
+pyyaml==6.0.1
+orjson==3.9.15
+
+# Logging & Monitoring
+structlog==24.1.0
+
+# Development & Testing
+pytest==8.0.0
+pytest-asyncio==0.23.4
+pytest-cov==4.1.0
+black==24.1.1
+ruff==0.1.15
