@@ -1,0 +1,11 @@
+# AI Cost Report Generation Dependencies
+# Add these to your main requirements.txt
+
+# PDF Generation
+reportlab==4.0.7
+
+# Excel Generation
+openpyxl==3.1.2
+
+# Chart generation for Excel
+Pillow==10.1.0  # For image handling in reports
