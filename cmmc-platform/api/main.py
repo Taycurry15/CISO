@@ -3,20 +3,21 @@
 
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, BackgroundTasks
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel, Field, UUID4
+from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date
 from enum import Enum
+from uuid import UUID
 import hashlib
 import uuid
 import asyncpg
-import asyncio
 from pathlib import Path
 import logging
 import os
+from contextlib import asynccontextmanager
 
 # Import AI/RAG services
-from services import (
+from api.services import (
     create_embedding_service,
     create_ai_analyzer,
     RAGService,
@@ -25,7 +26,7 @@ from services import (
 )
 
 # Import SPRS calculator
-from sprs_calculator import (
+from api.sprs_calculator import (
     calculate_sprs_score,
     save_sprs_score,
     get_sprs_score_history,
@@ -33,7 +34,7 @@ from sprs_calculator import (
 )
 
 # Import monitoring dashboard
-from monitoring_dashboard import (
+from api.monitoring_dashboard import (
     get_dashboard_summary,
     get_control_compliance_overview,
     get_recent_activity,
@@ -43,12 +44,8 @@ from monitoring_dashboard import (
     get_evidence_statistics
 )
 
-# Initialize FastAPI
-app = FastAPI(
-    title="CMMC Compliance Platform API",
-    version="1.0.0",
-    description="Assessor-grade API for CMMC Level 1 & 2 compliance automation"
-)
+# Note: FastAPI app initialization will be updated after lifespan is defined
+# Placeholder for now - will be moved after lifespan definition
 
 # Security
 security = HTTPBearer()
@@ -130,7 +127,7 @@ class EvidenceType(str, Enum):
 # Request/Response Models
 
 class DocumentIngestRequest(BaseModel):
-    assessment_id: UUID4
+    assessment_id: UUID
     title: str
     document_type: str = Field(..., description="policy, procedure, ssp, manual, etc.")
     control_id: Optional[str] = None
@@ -138,7 +135,7 @@ class DocumentIngestRequest(BaseModel):
     auto_embed: bool = True
 
 class DocumentChunk(BaseModel):
-    id: UUID4
+    id: UUID
     chunk_text: str
     chunk_index: int
     control_id: Optional[str]
@@ -146,13 +143,13 @@ class DocumentChunk(BaseModel):
     method: Optional[AssessmentMethod]
 
 class DocumentIngestResponse(BaseModel):
-    document_id: UUID4
+    document_id: UUID
     chunks_created: int
     file_hash: str
     processing_time_ms: int
 
 class ControlAnalysisRequest(BaseModel):
-    assessment_id: UUID4
+    assessment_id: UUID
     control_id: str
     objective_id: Optional[str] = None
     include_provider_inheritance: bool = True
@@ -160,7 +157,7 @@ class ControlAnalysisRequest(BaseModel):
     max_evidence_items: int = 10
 
 class EvidenceReference(BaseModel):
-    id: UUID4
+    id: UUID
     title: str
     evidence_type: EvidenceType
     file_hash: str
@@ -170,7 +167,7 @@ class EvidenceReference(BaseModel):
 class ControlAnalysisResponse(BaseModel):
     control_id: str
     objective_id: Optional[str]
-    finding_id: UUID4
+    finding_id: UUID
     status: FindingStatus
     assessor_narrative: str
     ai_confidence_score: float
@@ -181,7 +178,7 @@ class ControlAnalysisResponse(BaseModel):
     processing_time_ms: int
 
 class SSPExportRequest(BaseModel):
-    assessment_id: UUID4
+    assessment_id: UUID
     include_inherited_controls: bool = True
     include_diagrams: bool = True
     format: str = "docx"  # docx, pdf, json
@@ -193,7 +190,7 @@ class SSPSection(BaseModel):
     controls_covered: List[str]
 
 class SSPExportResponse(BaseModel):
-    assessment_id: UUID4
+    assessment_id: UUID
     file_path: str
     file_hash: str
     sections_count: int
@@ -210,18 +207,18 @@ class POAMItem(BaseModel):
     milestones: List[Dict[str, Any]]
 
 class POAMExportRequest(BaseModel):
-    assessment_id: UUID4
+    assessment_id: UUID
     format: str = "xlsx"  # xlsx, csv, json
 
 class POAMExportResponse(BaseModel):
-    assessment_id: UUID4
+    assessment_id: UUID
     file_path: str
     file_hash: str
     items_count: int
     generation_time_ms: int
 
 class EvidenceUploadRequest(BaseModel):
-    assessment_id: UUID4
+    assessment_id: UUID
     control_id: str
     objective_id: Optional[str]
     title: str
@@ -230,7 +227,7 @@ class EvidenceUploadRequest(BaseModel):
     method: AssessmentMethod
 
 class EvidenceUploadResponse(BaseModel):
-    evidence_id: UUID4
+    evidence_id: UUID
     file_hash: str
     file_size_bytes: int
     status: str
@@ -397,63 +394,75 @@ async def analyze_control_with_ai(
 # API ENDPOINTS
 # ============================================================================
 
-@app.on_event("startup")
-async def startup():
-    """Initialize database pool and AI services on startup"""
-    global embedding_service, rag_service, ai_analyzer
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager for startup and shutdown"""
+    global embedding_service, rag_service, ai_analyzer, db_pool
 
-    # Initialize database pool
-    await get_db_pool()
-    logger.info("Database pool initialized")
-
-    # Initialize embedding service
+    # Startup
     try:
-        embedding_api_key = config.EMBEDDING_API_KEY or config.AI_API_KEY
-        embedding_service = create_embedding_service(
-            provider=config.EMBEDDING_PROVIDER,
-            api_key=embedding_api_key,
-            model_name=config.EMBEDDING_MODEL
-        )
-        logger.info(f"Embedding service initialized: {config.EMBEDDING_PROVIDER}/{config.EMBEDDING_MODEL}")
-    except Exception as e:
-        logger.warning(f"Failed to initialize embedding service: {e}")
-        embedding_service = None
+        # Initialize database pool
+        await get_db_pool()
+        logger.info("Database pool initialized")
 
-    # Initialize RAG service
-    try:
-        if embedding_service:
-            pool = await get_db_pool()
-            rag_service = RAGService(
-                embedding_service=embedding_service,
-                db_pool=pool
+        # Initialize embedding service
+        try:
+            embedding_api_key = config.EMBEDDING_API_KEY or config.AI_API_KEY
+            embedding_service = create_embedding_service(
+                provider=config.EMBEDDING_PROVIDER,
+                api_key=embedding_api_key,
+                model_name=config.EMBEDDING_MODEL
             )
-            logger.info("RAG service initialized")
-        else:
-            logger.warning("RAG service not initialized (embedding service unavailable)")
-    except Exception as e:
-        logger.warning(f"Failed to initialize RAG service: {e}")
-        rag_service = None
+            logger.info(f"Embedding service initialized: {config.EMBEDDING_PROVIDER}/{config.EMBEDDING_MODEL}")
+        except Exception as e:
+            logger.warning(f"Failed to initialize embedding service: {e}")
+            embedding_service = None
 
-    # Initialize AI analyzer
-    try:
-        ai_analyzer = create_ai_analyzer(
-            provider=config.AI_PROVIDER,
-            api_key=config.AI_API_KEY,
-            model_name=config.AI_MODEL,
-            rag_service=rag_service
-        )
-        logger.info(f"AI analyzer initialized: {config.AI_PROVIDER}/{config.AI_MODEL}")
-    except Exception as e:
-        logger.warning(f"Failed to initialize AI analyzer: {e}")
-        ai_analyzer = None
+        # Initialize RAG service
+        try:
+            if embedding_service:
+                pool = await get_db_pool()
+                rag_service = RAGService(
+                    embedding_service=embedding_service,
+                    db_pool=pool
+                )
+                logger.info("RAG service initialized")
+            else:
+                logger.warning("RAG service not initialized (embedding service unavailable)")
+        except Exception as e:
+            logger.warning(f"Failed to initialize RAG service: {e}")
+            rag_service = None
 
-@app.on_event("shutdown")
-async def shutdown():
-    """Close database pool on shutdown"""
-    global db_pool
+        # Initialize AI analyzer
+        try:
+            ai_analyzer = create_ai_analyzer(
+                provider=config.AI_PROVIDER,
+                api_key=config.AI_API_KEY,
+                model_name=config.AI_MODEL,
+                rag_service=rag_service
+            )
+            logger.info(f"AI analyzer initialized: {config.AI_PROVIDER}/{config.AI_MODEL}")
+        except Exception as e:
+            logger.warning(f"Failed to initialize AI analyzer: {e}")
+            ai_analyzer = None
+    except Exception as e:
+        logger.error(f"Failed to initialize application: {e}")
+        raise
+
+    yield
+
+    # Shutdown
     if db_pool:
         await db_pool.close()
         logger.info("Database pool closed")
+
+# Initialize FastAPI with lifespan
+app = FastAPI(
+    title="CMMC Compliance Platform API",
+    version="1.0.0",
+    description="Assessor-grade API for CMMC Level 1 & 2 compliance automation",
+    lifespan=lifespan
+)
 
 @app.get("/health")
 async def health_check():
@@ -773,7 +782,7 @@ async def analyze_control(
 
 @app.post("/api/v1/ssp/{assessment_id}", response_model=SSPExportResponse)
 async def export_ssp(
-    assessment_id: UUID4,
+    assessment_id: UUID,
     request: SSPExportRequest,
     background_tasks: BackgroundTasks,
     conn: asyncpg.Connection = Depends(get_db)
@@ -835,7 +844,7 @@ async def export_ssp(
 
 @app.post("/api/v1/poam/{assessment_id}", response_model=POAMExportResponse)
 async def export_poam(
-    assessment_id: UUID4,
+    assessment_id: UUID,
     request: POAMExportRequest,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -1003,7 +1012,7 @@ class SPRSTrendResponse(BaseModel):
 
 @app.post("/api/v1/sprs/calculate/{assessment_id}", response_model=SPRSScoreResponse)
 async def calculate_sprs(
-    assessment_id: UUID4,
+    assessment_id: UUID,
     save_to_db: bool = True,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -1043,7 +1052,7 @@ async def calculate_sprs(
 
 @app.get("/api/v1/sprs/history/{assessment_id}", response_model=List[SPRSScoreHistoryItem])
 async def get_sprs_history(
-    assessment_id: UUID4,
+    assessment_id: UUID,
     conn: asyncpg.Connection = Depends(get_db)
 ):
     """
@@ -1055,7 +1064,7 @@ async def get_sprs_history(
 
 @app.get("/api/v1/sprs/trend/{assessment_id}", response_model=SPRSTrendResponse)
 async def get_sprs_trend(
-    assessment_id: UUID4,
+    assessment_id: UUID,
     conn: asyncpg.Connection = Depends(get_db)
 ):
     """
@@ -1076,7 +1085,7 @@ async def get_sprs_trend(
 
 @app.get("/api/v1/dashboard/summary/{organization_id}")
 async def dashboard_summary(
-    organization_id: UUID4,
+    organization_id: UUID,
     conn: asyncpg.Connection = Depends(get_db)
 ):
     """
@@ -1094,7 +1103,7 @@ async def dashboard_summary(
 
 @app.get("/api/v1/dashboard/compliance/{assessment_id}")
 async def compliance_overview(
-    assessment_id: UUID4,
+    assessment_id: UUID,
     conn: asyncpg.Connection = Depends(get_db)
 ):
     """
@@ -1109,7 +1118,7 @@ async def compliance_overview(
 
 @app.get("/api/v1/dashboard/activity/{organization_id}")
 async def recent_activity(
-    organization_id: UUID4,
+    organization_id: UUID,
     limit: int = 50,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -1126,7 +1135,7 @@ async def recent_activity(
 
 @app.get("/api/v1/dashboard/integrations/{organization_id}")
 async def integration_status(
-    organization_id: UUID4,
+    organization_id: UUID,
     conn: asyncpg.Connection = Depends(get_db)
 ):
     """
@@ -1142,7 +1151,7 @@ async def integration_status(
 
 @app.get("/api/v1/dashboard/risk/{assessment_id}")
 async def risk_metrics(
-    assessment_id: UUID4,
+    assessment_id: UUID,
     conn: asyncpg.Connection = Depends(get_db)
 ):
     """
@@ -1158,7 +1167,7 @@ async def risk_metrics(
 
 @app.get("/api/v1/dashboard/alerts/{organization_id}")
 async def alerts(
-    organization_id: UUID4,
+    organization_id: UUID,
     days: int = 7,
     conn: asyncpg.Connection = Depends(get_db)
 ):
@@ -1175,7 +1184,7 @@ async def alerts(
 
 @app.get("/api/v1/dashboard/evidence/{assessment_id}")
 async def evidence_statistics(
-    assessment_id: UUID4,
+    assessment_id: UUID,
     conn: asyncpg.Connection = Depends(get_db)
 ):
     """
