@@ -611,4 +611,416 @@ srStyle.textContent = `
 `;
 document.head.appendChild(srStyle);
 
+// ===========================
+// Authentication Modals
+// ===========================
+const loginModal = document.getElementById('loginModal');
+const signupModal = document.getElementById('signupModal');
+const loginBtn = document.querySelector('.login-btn');
+const getStartedBtns = document.querySelectorAll('[href="#demo"]');
+
+// Open Login Modal
+function openLoginModal() {
+    loginModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    trackEvent('modal_open', { modal: 'login' });
+}
+
+// Open Signup Modal
+function openSignupModal() {
+    signupModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    trackEvent('modal_open', { modal: 'signup' });
+}
+
+// Close Modal
+function closeModal(modal) {
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+    trackEvent('modal_close', { modal: modal.id });
+}
+
+// Login button click
+if (loginBtn) {
+    loginBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openLoginModal();
+    });
+}
+
+// Get Started buttons -> Open Signup
+getStartedBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openSignupModal();
+    });
+});
+
+// Close button handlers
+document.querySelectorAll('.auth-modal-close').forEach(closeBtn => {
+    closeBtn.addEventListener('click', () => {
+        const modal = closeBtn.closest('.auth-modal');
+        closeModal(modal);
+    });
+});
+
+// Close on overlay click
+document.querySelectorAll('.auth-modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', () => {
+        const modal = overlay.closest('.auth-modal');
+        closeModal(modal);
+    });
+});
+
+// Close on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        if (loginModal.classList.contains('active')) {
+            closeModal(loginModal);
+        }
+        if (signupModal.classList.contains('active')) {
+            closeModal(signupModal);
+        }
+    }
+});
+
+// Switch between login and signup
+document.querySelectorAll('.switch-to-signup').forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeModal(loginModal);
+        setTimeout(() => openSignupModal(), 200);
+    });
+});
+
+document.querySelectorAll('.switch-to-login').forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeModal(signupModal);
+        setTimeout(() => openLoginModal(), 200);
+    });
+});
+
+// ===========================
+// Password Toggle
+// ===========================
+document.querySelectorAll('.password-toggle').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+        const input = toggle.previousElementSibling;
+        const type = input.getAttribute('type');
+
+        if (type === 'password') {
+            input.setAttribute('type', 'text');
+            toggle.setAttribute('aria-label', 'Hide password');
+        } else {
+            input.setAttribute('type', 'password');
+            toggle.setAttribute('aria-label', 'Show password');
+        }
+    });
+});
+
+// ===========================
+// Password Strength Indicator
+// ===========================
+const signupPassword = document.getElementById('signupPassword');
+if (signupPassword) {
+    signupPassword.addEventListener('input', (e) => {
+        const password = e.target.value;
+        const strengthFill = document.querySelector('.password-strength-fill');
+        const strengthText = document.querySelector('.password-strength-text');
+
+        const strength = calculatePasswordStrength(password);
+
+        // Remove existing classes
+        strengthFill.classList.remove('weak', 'medium', 'strong');
+
+        if (password.length === 0) {
+            strengthFill.style.width = '0%';
+            strengthText.textContent = '';
+            return;
+        }
+
+        if (strength < 40) {
+            strengthFill.classList.add('weak');
+            strengthText.textContent = 'Weak password';
+        } else if (strength < 70) {
+            strengthFill.classList.add('medium');
+            strengthText.textContent = 'Medium strength';
+        } else {
+            strengthFill.classList.add('strong');
+            strengthText.textContent = 'Strong password';
+        }
+    });
+}
+
+function calculatePasswordStrength(password) {
+    let strength = 0;
+
+    if (password.length >= 8) strength += 20;
+    if (password.length >= 12) strength += 10;
+    if (/[a-z]/.test(password)) strength += 15;
+    if (/[A-Z]/.test(password)) strength += 15;
+    if (/[0-9]/.test(password)) strength += 15;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 25;
+
+    return strength;
+}
+
+// ===========================
+// Form Validation
+// ===========================
+function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
+function validatePassword(password) {
+    return password.length >= 8;
+}
+
+function showError(inputId, message) {
+    const input = document.getElementById(inputId);
+    const errorSpan = document.getElementById(inputId + 'Error');
+
+    if (input && errorSpan) {
+        input.classList.add('error');
+        errorSpan.textContent = message;
+        errorSpan.classList.add('visible');
+    }
+}
+
+function clearError(inputId) {
+    const input = document.getElementById(inputId);
+    const errorSpan = document.getElementById(inputId + 'Error');
+
+    if (input && errorSpan) {
+        input.classList.remove('error');
+        errorSpan.textContent = '';
+        errorSpan.classList.remove('visible');
+    }
+}
+
+// Clear errors on input
+document.querySelectorAll('.auth-form input').forEach(input => {
+    input.addEventListener('input', () => {
+        clearError(input.id);
+    });
+});
+
+// ===========================
+// Login Form Submission
+// ===========================
+const loginForm = document.getElementById('loginForm');
+if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
+
+        // Reset errors
+        clearError('loginEmail');
+        clearError('loginPassword');
+
+        // Validation
+        let hasError = false;
+
+        if (!validateEmail(email)) {
+            showError('loginEmail', 'Please enter a valid email address');
+            hasError = true;
+        }
+
+        if (password.length === 0) {
+            showError('loginPassword', 'Password is required');
+            hasError = true;
+        }
+
+        if (hasError) return;
+
+        // Show loading state
+        submitBtn.classList.add('loading');
+        submitBtn.disabled = true;
+
+        try {
+            // Replace with your actual API endpoint
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
+
+            // Simulate API call for demo
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            if (response.ok || true) { // Remove "|| true" in production
+                // Success
+                trackEvent('login_success', { method: 'email' });
+                showNotification('Login successful! Redirecting...', 'success');
+
+                // Redirect to dashboard
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 1000);
+            } else {
+                throw new Error('Login failed');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            showError('loginPassword', 'Invalid email or password');
+            trackEvent('login_failed', { method: 'email', error: error.message });
+        } finally {
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+        }
+    });
+}
+
+// ===========================
+// Signup Form Submission
+// ===========================
+const signupForm = document.getElementById('signupForm');
+if (signupForm) {
+    signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const firstName = document.getElementById('signupFirstName').value.trim();
+        const lastName = document.getElementById('signupLastName').value.trim();
+        const company = document.getElementById('signupCompany').value.trim();
+        const email = document.getElementById('signupEmail').value.trim();
+        const password = document.getElementById('signupPassword').value;
+        const termsAccepted = document.getElementById('acceptTerms').checked;
+        const submitBtn = signupForm.querySelector('button[type="submit"]');
+
+        // Reset errors
+        clearError('signupFirstName');
+        clearError('signupLastName');
+        clearError('signupCompany');
+        clearError('signupEmail');
+        clearError('signupPassword');
+        clearError('signupTerms');
+
+        // Validation
+        let hasError = false;
+
+        if (firstName.length < 2) {
+            showError('signupFirstName', 'First name is required');
+            hasError = true;
+        }
+
+        if (lastName.length < 2) {
+            showError('signupLastName', 'Last name is required');
+            hasError = true;
+        }
+
+        if (company.length < 2) {
+            showError('signupCompany', 'Company name is required');
+            hasError = true;
+        }
+
+        if (!validateEmail(email)) {
+            showError('signupEmail', 'Please enter a valid work email');
+            hasError = true;
+        }
+
+        if (!validatePassword(password)) {
+            showError('signupPassword', 'Password must be at least 8 characters');
+            hasError = true;
+        }
+
+        if (!termsAccepted) {
+            showError('signupTerms', 'You must accept the terms and conditions');
+            hasError = true;
+        }
+
+        if (hasError) return;
+
+        // Show loading state
+        submitBtn.classList.add('loading');
+        submitBtn.disabled = true;
+
+        try {
+            // Replace with your actual API endpoint
+            const response = await fetch('/api/auth/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    firstName,
+                    lastName,
+                    company,
+                    email,
+                    password
+                }),
+            });
+
+            // Simulate API call for demo
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            if (response.ok || true) { // Remove "|| true" in production
+                // Success
+                trackEvent('signup_success', { method: 'email' });
+                showNotification('Account created! Welcome to ComplianceFlow!', 'success');
+
+                // Redirect to onboarding or dashboard
+                setTimeout(() => {
+                    window.location.href = '/onboarding';
+                }, 1500);
+            } else {
+                const data = await response.json();
+                throw new Error(data.message || 'Signup failed');
+            }
+        } catch (error) {
+            console.error('Signup error:', error);
+            showError('signupEmail', error.message || 'An error occurred. Please try again.');
+            trackEvent('signup_failed', { method: 'email', error: error.message });
+        } finally {
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+        }
+    });
+}
+
+// ===========================
+// Social Authentication
+// ===========================
+document.querySelectorAll('.social-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const provider = btn.dataset.provider;
+        trackEvent('social_auth_click', { provider });
+
+        // Show loading notification
+        showNotification(`Redirecting to ${provider}...`, 'info');
+
+        // Redirect to OAuth endpoint
+        setTimeout(() => {
+            window.location.href = `/api/auth/${provider}`;
+        }, 500);
+    });
+});
+
+// ===========================
+// Forgot Password Handler
+// ===========================
+document.querySelectorAll('.forgot-password').forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('loginEmail').value;
+
+        trackEvent('forgot_password_click');
+
+        // In production, open a password reset modal or redirect
+        const resetEmail = prompt('Enter your email address to reset your password:', email);
+
+        if (resetEmail && validateEmail(resetEmail)) {
+            showNotification('Password reset link sent to ' + resetEmail, 'success');
+            trackEvent('password_reset_requested', { email: resetEmail });
+        }
+    });
+});
+
 console.log('ComplianceFlow v1.0 - Ready to accelerate compliance!');

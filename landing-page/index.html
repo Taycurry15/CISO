@@ -28,7 +28,7 @@
                     <a href="#how-it-works">How It Works</a>
                     <a href="#pricing">Pricing</a>
                     <a href="#resources">Resources</a>
-                    <a href="#contact" class="btn-secondary">Contact Sales</a>
+                    <a href="#" class="login-btn">Log In</a>
                     <a href="#demo" class="btn-primary">Get Started</a>
                 </div>
                 <button class="mobile-menu-toggle" aria-label="Toggle menu">
@@ -583,6 +583,230 @@
             </div>
         </div>
     </footer>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="auth-modal">
+        <div class="auth-modal-overlay"></div>
+        <div class="auth-modal-content">
+            <button class="auth-modal-close" aria-label="Close">&times;</button>
+            <div class="auth-modal-header">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 2L4 8V14C4 21.18 9.02 27.92 16 30C22.98 27.92 28 21.18 28 14V8L16 2Z" fill="#2563EB"/>
+                        <path d="M14 20L10 16L11.41 14.59L14 17.17L20.59 10.58L22 12L14 20Z" fill="white"/>
+                    </svg>
+                    <span class="logo-text">ComplianceFlow</span>
+                </div>
+                <h2>Welcome Back</h2>
+                <p>Log in to access your compliance dashboard</p>
+            </div>
+            <form class="auth-form" id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email Address</label>
+                    <input
+                        type="email"
+                        id="loginEmail"
+                        name="email"
+                        placeholder="you@company.com"
+                        required
+                        autocomplete="email"
+                    >
+                    <span class="form-error" id="loginEmailError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <div class="password-input-wrapper">
+                        <input
+                            type="password"
+                            id="loginPassword"
+                            name="password"
+                            placeholder="Enter your password"
+                            required
+                            autocomplete="current-password"
+                        >
+                        <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                            <svg class="eye-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <span class="form-error" id="loginPasswordError"></span>
+                </div>
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="remember" id="rememberMe">
+                        <span>Remember me</span>
+                    </label>
+                    <a href="#" class="forgot-password">Forgot password?</a>
+                </div>
+                <button type="submit" class="btn-primary btn-full btn-large">
+                    <span class="btn-text">Log In</span>
+                    <span class="btn-loader"></span>
+                </button>
+                <div class="auth-divider">
+                    <span>or continue with</span>
+                </div>
+                <div class="social-auth">
+                    <button type="button" class="social-btn" data-provider="google">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z" fill="#4285F4"/>
+                            <path d="M10 20c2.7 0 4.964-.895 6.618-2.423l-3.232-2.509c-.895.6-2.04.955-3.386.955-2.605 0-4.81-1.76-5.595-4.123H1.064v2.59A9.996 9.996 0 0010 20z" fill="#34A853"/>
+                            <path d="M4.405 11.9c-.2-.6-.314-1.24-.314-1.9 0-.66.114-1.3.314-1.9V5.51H1.064A9.996 9.996 0 000 10c0 1.614.386 3.14 1.064 4.49l3.34-2.59z" fill="#FBBC05"/>
+                            <path d="M10 3.977c1.468 0 2.786.505 3.823 1.496l2.868-2.868C14.959.99 12.696 0 10 0 6.09 0 2.71 2.24 1.064 5.51l3.34 2.59C5.19 5.736 7.396 3.977 10 3.977z" fill="#EA4335"/>
+                        </svg>
+                        Google
+                    </button>
+                    <button type="button" class="social-btn" data-provider="microsoft">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M0 0h9.5v9.5H0V0z" fill="#F25022"/>
+                            <path d="M10.5 0H20v9.5h-9.5V0z" fill="#7FBA00"/>
+                            <path d="M0 10.5h9.5V20H0v-9.5z" fill="#00A4EF"/>
+                            <path d="M10.5 10.5H20V20h-9.5v-9.5z" fill="#FFB900"/>
+                        </svg>
+                        Microsoft
+                    </button>
+                </div>
+            </form>
+            <div class="auth-footer">
+                <p>Don't have an account? <a href="#" class="switch-to-signup">Sign up</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div id="signupModal" class="auth-modal">
+        <div class="auth-modal-overlay"></div>
+        <div class="auth-modal-content">
+            <button class="auth-modal-close" aria-label="Close">&times;</button>
+            <div class="auth-modal-header">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 2L4 8V14C4 21.18 9.02 27.92 16 30C22.98 27.92 28 21.18 28 14V8L16 2Z" fill="#2563EB"/>
+                        <path d="M14 20L10 16L11.41 14.59L14 17.17L20.59 10.58L22 12L14 20Z" fill="white"/>
+                    </svg>
+                    <span class="logo-text">ComplianceFlow</span>
+                </div>
+                <h2>Get Started Free</h2>
+                <p>Start your 30-day free trial. No credit card required.</p>
+            </div>
+            <form class="auth-form" id="signupForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="signupFirstName">First Name</label>
+                        <input
+                            type="text"
+                            id="signupFirstName"
+                            name="firstName"
+                            placeholder="John"
+                            required
+                            autocomplete="given-name"
+                        >
+                        <span class="form-error" id="signupFirstNameError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupLastName">Last Name</label>
+                        <input
+                            type="text"
+                            id="signupLastName"
+                            name="lastName"
+                            placeholder="Doe"
+                            required
+                            autocomplete="family-name"
+                        >
+                        <span class="form-error" id="signupLastNameError"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="signupCompany">Company Name</label>
+                    <input
+                        type="text"
+                        id="signupCompany"
+                        name="company"
+                        placeholder="Your Company Inc."
+                        required
+                        autocomplete="organization"
+                    >
+                    <span class="form-error" id="signupCompanyError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="signupEmail">Work Email</label>
+                    <input
+                        type="email"
+                        id="signupEmail"
+                        name="email"
+                        placeholder="you@company.com"
+                        required
+                        autocomplete="email"
+                    >
+                    <span class="form-error" id="signupEmailError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password</label>
+                    <div class="password-input-wrapper">
+                        <input
+                            type="password"
+                            id="signupPassword"
+                            name="password"
+                            placeholder="Create a strong password"
+                            required
+                            autocomplete="new-password"
+                        >
+                        <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                            <svg class="eye-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="password-strength">
+                        <div class="password-strength-bar">
+                            <div class="password-strength-fill"></div>
+                        </div>
+                        <span class="password-strength-text"></span>
+                    </div>
+                    <span class="form-error" id="signupPasswordError"></span>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="terms" id="acceptTerms" required>
+                        <span>I agree to the <a href="#terms" target="_blank">Terms of Service</a> and <a href="#privacy" target="_blank">Privacy Policy</a></span>
+                    </label>
+                    <span class="form-error" id="signupTermsError"></span>
+                </div>
+                <button type="submit" class="btn-primary btn-full btn-large">
+                    <span class="btn-text">Create Account</span>
+                    <span class="btn-loader"></span>
+                </button>
+                <div class="auth-divider">
+                    <span>or sign up with</span>
+                </div>
+                <div class="social-auth">
+                    <button type="button" class="social-btn" data-provider="google">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z" fill="#4285F4"/>
+                            <path d="M10 20c2.7 0 4.964-.895 6.618-2.423l-3.232-2.509c-.895.6-2.04.955-3.386.955-2.605 0-4.81-1.76-5.595-4.123H1.064v2.59A9.996 9.996 0 0010 20z" fill="#34A853"/>
+                            <path d="M4.405 11.9c-.2-.6-.314-1.24-.314-1.9 0-.66.114-1.3.314-1.9V5.51H1.064A9.996 9.996 0 000 10c0 1.614.386 3.14 1.064 4.49l3.34-2.59z" fill="#FBBC05"/>
+                            <path d="M10 3.977c1.468 0 2.786.505 3.823 1.496l2.868-2.868C14.959.99 12.696 0 10 0 6.09 0 2.71 2.24 1.064 5.51l3.34 2.59C5.19 5.736 7.396 3.977 10 3.977z" fill="#EA4335"/>
+                        </svg>
+                        Google
+                    </button>
+                    <button type="button" class="social-btn" data-provider="microsoft">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M0 0h9.5v9.5H0V0z" fill="#F25022"/>
+                            <path d="M10.5 0H20v9.5h-9.5V0z" fill="#7FBA00"/>
+                            <path d="M0 10.5h9.5V20H0v-9.5z" fill="#00A4EF"/>
+                            <path d="M10.5 10.5H20V20h-9.5v-9.5z" fill="#FFB900"/>
+                        </svg>
+                        Microsoft
+                    </button>
+                </div>
+            </form>
+            <div class="auth-footer">
+                <p>Already have an account? <a href="#" class="switch-to-login">Log in</a></p>
+            </div>
+        </div>
+    </div>
 
     <script src="assets/js/main.js"></script>
 </body>
