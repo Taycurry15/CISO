@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting - SmartGnosis</title>
+    <script>
+        // Redirect to React app
+        window.location.href = '/app';
+    </script>
+    <style>
+        .dashboard-container {
+            min-height: 100vh;
+            background: #f3f4f6;
+            padding-top: 80px;
+        }
+
+        .dashboard-header {
+            background: white;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .dashboard-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .welcome-card {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .welcome-card h1 {
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-card p {
+            color: #6b7280;
+            font-size: 1.125rem;
+        }
+
+        .user-info {
+            background: #f9fafb;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .user-info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .user-info-item:last-child {
+            border-bottom: none;
+        }
+
+        .user-info-label {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .user-info-value {
+            color: #6b7280;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard-card h3 {
+            color: #111827;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+        }
+
+        .dashboard-card p {
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        .btn-logout {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: #dc2626;
+        }
+
+        .coming-soon-badge {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-wrapper">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 2L4 8V14C4 21.18 9.02 27.92 16 30C22.98 27.92 28 21.18 28 14V8L16 2Z" fill="#2563EB"/>
+                        <path d="M14 20L10 16L11.41 14.59L14 17.17L20.59 10.58L22 12L14 20Z" fill="white"/>
+                    </svg>
+                    <span class="logo-text">SmartGnosis</span>
+                </div>
+                <div class="nav-links">
+                    <a href="/">Home</a>
+                    <button class="btn-logout" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <div class="dashboard-content">
+            <div class="welcome-card">
+                <h1>Welcome to SmartGnosis! 🎉</h1>
+                <p>You've successfully logged in to your account.</p>
+
+                <div class="user-info">
+                    <h3 style="margin-bottom: 1rem;">Account Information</h3>
+                    <div class="user-info-item">
+                        <span class="user-info-label">Email:</span>
+                        <span class="user-info-value" id="userEmail">Loading...</span>
+                    </div>
+                    <div class="user-info-item">
+                        <span class="user-info-label">Role:</span>
+                        <span class="user-info-value" id="userRole">Loading...</span>
+                    </div>
+                    <div class="user-info-item">
+                        <span class="user-info-label">Status:</span>
+                        <span class="user-info-value" style="color: #10b981; font-weight: 600;">● Active</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <h3>CMMC Assessments <span class="coming-soon-badge">Coming Soon</span></h3>
+                    <p>Create and manage your CMMC compliance assessments. Track progress, collect evidence, and generate reports.</p>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3>Evidence Collection <span class="coming-soon-badge">Coming Soon</span></h3>
+                    <p>Automated evidence collection from your infrastructure. Upload screenshots, policies, and configuration files.</p>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3>AI Analysis <span class="coming-soon-badge">Coming Soon</span></h3>
+                    <p>Let AI analyze your evidence and suggest control compliance status with detailed rationale and recommendations.</p>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3>Reports & Export <span class="coming-soon-badge">Coming Soon</span></h3>
+                    <p>Generate System Security Plans (SSP), POA&M documents, and SPRS score reports ready for C3PAO assessment.</p>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3>Continuous Monitoring <span class="coming-soon-badge">Coming Soon</span></h3>
+                    <p>Real-time compliance monitoring with integrations to Nessus, Splunk, Azure, AWS, and M365 GCC High.</p>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3>Provider Inheritance <span class="coming-soon-badge">Coming Soon</span></h3>
+                    <p>Automatically document inherited controls from M365 GCC High, Azure Government, and AWS GovCloud.</p>
+                </div>
+            </div>
+
+            <div class="welcome-card" style="margin-top: 2rem; background: #fef3c7; border-left: 4px solid #f59e0b;">
+                <h3 style="color: #92400e; margin-bottom: 0.5rem;">Full Platform Coming Soon!</h3>
+                <p style="color: #78350f;">We're building the complete CMMC compliance automation platform. You'll receive an email when new features are available. Thank you for your patience!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is authenticated
+        const accessToken = localStorage.getItem('access_token');
+
+        if (!accessToken) {
+            // Not logged in, redirect to home
+            window.location.href = '/';
+        } else {
+            // Decode JWT to show user info (simple base64 decode, not secure validation)
+            try {
+                const payload = JSON.parse(atob(accessToken.split('.')[1]));
+                document.getElementById('userEmail').textContent = payload.email || 'N/A';
+                document.getElementById('userRole').textContent = (payload.role || 'user').toUpperCase();
+            } catch (e) {
+                console.error('Error decoding token:', e);
+            }
+        }
+
+        function logout() {
+            // Clear tokens
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+
+            // Show notification
+            alert('You have been logged out successfully.');
+
+            // Redirect to home
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

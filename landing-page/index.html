@@ -808,6 +808,14 @@
         </div>
     </div>
 
+    <script>
+        // Redirect authenticated users to React app
+        const accessToken = localStorage.getItem('access_token');
+        if (accessToken) {
+            // User is already logged in, redirect to app
+            window.location.href = '/app';
+        }
+    </script>
     <script src="config.js"></script>
     <script src="assets/js/analytics.js"></script>
     <script src="assets/js/main.js"></script>

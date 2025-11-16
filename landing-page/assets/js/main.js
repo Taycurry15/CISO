@@ -866,14 +866,9 @@ if (loginForm) {
                 trackEvent('login_success', { method: 'email' });
                 showNotification('Login successful! Welcome back!', 'success');
 
-                // Close the login modal
+                // Redirect to React app
                 setTimeout(() => {
-                    const modal = document.getElementById('loginModal');
-                    if (modal) {
-                        modal.style.display = 'none';
-                    }
-                    // Reload the page to update UI with authenticated state
-                    window.location.reload();
+                    window.location.href = '/app';
                 }, 1000);
             } else {
                 // Handle error response
@@ -994,12 +989,8 @@ if (signupForm) {
                                 localStorage.setItem('refresh_token', loginData.refresh_token);
                             }
 
-                            // Close signup modal and reload page
-                            const modal = document.getElementById('signupModal');
-                            if (modal) {
-                                modal.style.display = 'none';
-                            }
-                            window.location.reload();
+                            // Redirect to React app
+                            window.location.href = '/app';
                         }
                     } catch (loginError) {
                         console.error('Auto-login error:', loginError);
@@ -1067,9 +1058,9 @@ if (authSuccess && accessToken) {
     // Clean up URL and reload
     window.history.replaceState({}, document.title, window.location.pathname);
 
-    // Reload page to show authenticated state
+    // Redirect to React app
     setTimeout(() => {
-        window.location.reload();
+        window.location.href = '/app';
     }, 1000);
 } else if (authError) {
     // Show error notification
