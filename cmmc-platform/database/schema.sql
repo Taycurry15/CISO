@@ -17,6 +17,9 @@ CREATE TABLE organizations (
     cage_code VARCHAR(5),
     cmmc_level INTEGER CHECK (cmmc_level IN (1, 2, 3)),
     target_certification_date DATE,
+    organization_type VARCHAR(50), -- prime_contractor, subcontractor, osc, supplier
+    current_authorization VARCHAR(100), -- FedRAMP, StateRAMP, etc.
+    active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -25,8 +28,10 @@ CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
     email VARCHAR(255) UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    role VARCHAR(50) NOT NULL, -- admin, assessor, viewer
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL, -- admin, assessor, viewer, integration
+    active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -346,6 +351,103 @@ CREATE TABLE sprs_scores (
     score INTEGER CHECK (score >= -203 AND score <= 110), -- SPRS range: -203 to 110
     calculation_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     details JSONB -- Breakdown by control family
+);
+
+-- ============================================================================
+-- AUTHENTICATION & API KEYS
+-- ============================================================================
+
+CREATE TABLE api_keys (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    key_hash VARCHAR(255) NOT NULL,
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    last_used_at TIMESTAMP WITH TIME ZONE,
+    active BOOLEAN DEFAULT TRUE
+);
+
+-- ============================================================================
+-- MONITORING & ALERTS
+-- ============================================================================
+
+CREATE TABLE alert_rules (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    rule_name VARCHAR(255) NOT NULL,
+    rule_type VARCHAR(50) NOT NULL, -- sprs_drop, new_high_findings, overdue_poam, etc.
+    condition JSONB NOT NULL, -- Rule conditions (threshold, count, etc.)
+    severity VARCHAR(20) NOT NULL CHECK (severity IN ('critical', 'high', 'medium', 'low', 'info')),
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE alerts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    rule_id UUID REFERENCES alert_rules(id),
+    severity VARCHAR(20) NOT NULL CHECK (severity IN ('critical', 'high', 'medium', 'low', 'info')),
+    message TEXT NOT NULL,
+    details JSONB,
+    status VARCHAR(50) DEFAULT 'active', -- active, acknowledged, resolved, dismissed
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    acknowledged_at TIMESTAMP WITH TIME ZONE,
+    acknowledged_by UUID REFERENCES users(id),
+    resolved_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE TABLE integration_schedules (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    integration_type VARCHAR(50) NOT NULL, -- nessus, splunk, azure, aws, m365
+    interval VARCHAR(20) NOT NULL CHECK (interval IN ('hourly', 'daily', 'weekly', 'monthly')),
+    active BOOLEAN DEFAULT TRUE,
+    last_run_at TIMESTAMP WITH TIME ZONE,
+    next_run_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================================================
+-- ONBOARDING
+-- ============================================================================
+
+CREATE TABLE onboarding_workflows (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_name VARCHAR(255) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'initiated',
+    request_data JSONB,
+    metadata JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE integration_credentials (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    integration_type VARCHAR(50) NOT NULL,
+    credentials JSONB NOT NULL, -- Encrypted credentials
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================================================
+-- COMPLIANCE REPORTING
+-- ============================================================================
+
+CREATE TABLE compliance_reports (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    report_type VARCHAR(50) NOT NULL, -- weekly, monthly, quarterly, annual
+    period_start TIMESTAMP WITH TIME ZONE NOT NULL,
+    period_end TIMESTAMP WITH TIME ZONE NOT NULL,
+    summary JSONB NOT NULL,
+    file_path TEXT,
+    generated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- ============================================================================

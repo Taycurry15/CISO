@@ -14,6 +14,25 @@ import asyncio
 from pathlib import Path
 import logging
 
+# Import SPRS calculator
+from sprs_calculator import (
+    calculate_sprs_score,
+    save_sprs_score,
+    get_sprs_score_history,
+    get_sprs_score_trend
+)
+
+# Import monitoring dashboard
+from monitoring_dashboard import (
+    get_dashboard_summary,
+    get_control_compliance_overview,
+    get_recent_activity,
+    get_integration_status,
+    get_risk_metrics,
+    get_recent_alerts,
+    get_evidence_statistics
+)
+
 # Initialize FastAPI
 app = FastAPI(
     title="CMMC Compliance Platform API",
@@ -761,6 +780,224 @@ async def get_provider_inheritance(
     )
     
     return [ProviderInheritance(**dict(row)) for row in rows]
+
+# ----------------------------------------------------------------------------
+# SPRS SCORING
+# ----------------------------------------------------------------------------
+
+class SPRSScoreResponse(BaseModel):
+    score: int = Field(..., ge=-203, le=110)
+    total_controls: int
+    met_count: int
+    partially_met_count: int
+    not_met_count: int
+    not_assessed_count: int
+    not_applicable_count: int
+    family_breakdown: Dict[str, Any]
+    calculation_date: str
+
+class SPRSScoreHistoryItem(BaseModel):
+    id: str
+    score: int
+    calculation_date: str
+    details: Dict[str, Any]
+
+class SPRSTrendResponse(BaseModel):
+    current_score: Optional[int]
+    previous_score: Optional[int]
+    score_change: int
+    improvement_rate: float
+    trend: str
+    calculation_date: Optional[str]
+    total_calculations: int
+
+@app.post("/api/v1/sprs/calculate/{assessment_id}", response_model=SPRSScoreResponse)
+async def calculate_sprs(
+    assessment_id: UUID4,
+    save_to_db: bool = True,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Calculate SPRS score for an assessment.
+
+    This endpoint:
+    1. Retrieves all control findings for the assessment
+    2. Calculates SPRS score based on NIST 800-171 compliance
+    3. Provides breakdown by control family
+    4. Optionally saves the score to the database
+
+    SPRS Score Range: -203 to 110
+    - Base score: 110
+    - Met: 0 deduction
+    - Partially Met: -1 point
+    - Not Met (with POA&M): -1 point
+    - Not Met (without POA&M): -3 points
+    - Not Assessed: -1 point
+    """
+    score_data = await calculate_sprs_score(str(assessment_id), conn)
+
+    if save_to_db:
+        await save_sprs_score(str(assessment_id), score_data, conn)
+
+    return SPRSScoreResponse(
+        score=score_data['score'],
+        total_controls=score_data['total_controls'],
+        met_count=score_data['met_count'],
+        partially_met_count=score_data['partially_met_count'],
+        not_met_count=score_data['not_met_count'],
+        not_assessed_count=score_data['not_assessed_count'],
+        not_applicable_count=score_data['not_applicable_count'],
+        family_breakdown=score_data['family_breakdown'],
+        calculation_date=score_data['calculation_date']
+    )
+
+@app.get("/api/v1/sprs/history/{assessment_id}", response_model=List[SPRSScoreHistoryItem])
+async def get_sprs_history(
+    assessment_id: UUID4,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get historical SPRS scores for an assessment.
+    Useful for tracking compliance progress over time.
+    """
+    history = await get_sprs_score_history(str(assessment_id), conn)
+    return [SPRSScoreHistoryItem(**item) for item in history]
+
+@app.get("/api/v1/sprs/trend/{assessment_id}", response_model=SPRSTrendResponse)
+async def get_sprs_trend(
+    assessment_id: UUID4,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get SPRS score trend analysis.
+
+    Returns:
+    - Current and previous scores
+    - Score change (positive = improvement)
+    - Improvement rate (percentage)
+    - Trend direction (improving, declining, stable)
+    """
+    trend = await get_sprs_score_trend(str(assessment_id), conn)
+    return SPRSTrendResponse(**trend)
+
+# ----------------------------------------------------------------------------
+# CONTINUOUS MONITORING DASHBOARD
+# ----------------------------------------------------------------------------
+
+@app.get("/api/v1/dashboard/summary/{organization_id}")
+async def dashboard_summary(
+    organization_id: UUID4,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get dashboard summary for an organization.
+
+    Provides high-level overview including:
+    - Assessment statistics
+    - SPRS score summary
+    - Compliance percentage
+    - Evidence counts
+    - POA&M status
+    - Recent alerts
+    """
+    return await get_dashboard_summary(str(organization_id), conn)
+
+@app.get("/api/v1/dashboard/compliance/{assessment_id}")
+async def compliance_overview(
+    assessment_id: UUID4,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get detailed control compliance overview for an assessment.
+
+    Returns:
+    - Compliance breakdown by control family
+    - Top non-compliant controls
+    - Compliance percentages
+    """
+    return await get_control_compliance_overview(str(assessment_id), conn)
+
+@app.get("/api/v1/dashboard/activity/{organization_id}")
+async def recent_activity(
+    organization_id: UUID4,
+    limit: int = 50,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get recent activity feed for an organization.
+
+    Returns chronological list of recent changes including:
+    - Evidence uploads
+    - Finding updates
+    - POA&M changes
+    - Assessment progress
+    """
+    return await get_recent_activity(str(organization_id), conn, limit)
+
+@app.get("/api/v1/dashboard/integrations/{organization_id}")
+async def integration_status(
+    organization_id: UUID4,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get integration status for an organization.
+
+    Returns:
+    - Integration health status
+    - Success rates
+    - Last run times
+    - Error statistics
+    """
+    return await get_integration_status(str(organization_id), conn)
+
+@app.get("/api/v1/dashboard/risk/{assessment_id}")
+async def risk_metrics(
+    assessment_id: UUID4,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get risk metrics for an assessment.
+
+    Returns:
+    - Overall risk score
+    - Risk distribution by severity
+    - Critical findings
+    - Overdue POA&Ms
+    """
+    return await get_risk_metrics(str(assessment_id), conn)
+
+@app.get("/api/v1/dashboard/alerts/{organization_id}")
+async def alerts(
+    organization_id: UUID4,
+    days: int = 7,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get recent alerts for an organization.
+
+    Returns alerts for:
+    - Overdue POA&Ms
+    - Integration failures
+    - New non-compliant controls
+    - Compliance drops
+    """
+    return await get_recent_alerts(str(organization_id), conn, days)
+
+@app.get("/api/v1/dashboard/evidence/{assessment_id}")
+async def evidence_statistics(
+    assessment_id: UUID4,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get evidence statistics for an assessment.
+
+    Returns:
+    - Evidence counts by type
+    - Collection method breakdown
+    - Status distribution
+    - Recent uploads
+    """
+    return await get_evidence_statistics(str(assessment_id), conn)
 
 if __name__ == "__main__":
     import uvicorn
