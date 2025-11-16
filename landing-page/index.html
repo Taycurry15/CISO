@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ComplianceFlow - AI-powered CMMC compliance automation for Defense Industrial Base contractors. Get CMMC certified in days, not months.">
+    <meta name="keywords" content="CMMC, compliance, automation, AI, defense contractors, DIB, cybersecurity">
+    <title>ComplianceFlow - CMMC Compliance Automation for Defense Contractors</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-wrapper">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 2L4 8V14C4 21.18 9.02 27.92 16 30C22.98 27.92 28 21.18 28 14V8L16 2Z" fill="#2563EB"/>
+                        <path d="M14 20L10 16L11.41 14.59L14 17.17L20.59 10.58L22 12L14 20Z" fill="white"/>
+                    </svg>
+                    <span class="logo-text">ComplianceFlow</span>
+                </div>
+                <div class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="#how-it-works">How It Works</a>
+                    <a href="#pricing">Pricing</a>
+                    <a href="#resources">Resources</a>
+                    <a href="#" class="login-btn">Log In</a>
+                    <a href="#demo" class="btn-primary">Get Started</a>
+                </div>
+                <button class="mobile-menu-toggle" aria-label="Toggle menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="badge-icon">🚀</span>
+                    <span>Trusted by Defense Contractors Nationwide</span>
+                </div>
+                <h1 class="hero-title">
+                    CMMC Compliance in
+                    <span class="gradient-text">Days, Not Months</span>
+                </h1>
+                <p class="hero-subtitle">
+                    AI-powered compliance automation for Defense Industrial Base contractors.
+                    Achieve CMMC Level 1 & 2 certification with automated evidence collection,
+                    intelligent analysis, and assessor-grade documentation.
+                </p>
+                <div class="hero-cta">
+                    <a href="#demo" class="btn-large btn-primary">Start Free Trial</a>
+                    <a href="#demo-video" class="btn-large btn-outline">Watch Demo</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-number">95%</div>
+                        <div class="stat-label">Faster Evidence Collection</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">40%</div>
+                        <div class="stat-label">Effort Reduction</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">110</div>
+                        <div class="stat-label">Controls Automated</div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="dashboard-preview">
+                    <div class="browser-chrome">
+                        <div class="chrome-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <div class="chrome-address">complianceflow.app/dashboard</div>
+                    </div>
+                    <div class="dashboard-content">
+                        <div class="dashboard-header">
+                            <h3>Compliance Dashboard</h3>
+                            <span class="status-badge success">98% Complete</span>
+                        </div>
+                        <div class="progress-rings">
+                            <div class="ring-item">
+                                <svg class="progress-ring" width="120" height="120">
+                                    <circle cx="60" cy="60" r="54" fill="none" stroke="#E5E7EB" stroke-width="8"/>
+                                    <circle cx="60" cy="60" r="54" fill="none" stroke="#2563EB" stroke-width="8"
+                                            stroke-dasharray="339.292" stroke-dashoffset="33.929"
+                                            transform="rotate(-90 60 60)"/>
+                                </svg>
+                                <div class="ring-label">
+                                    <div class="ring-value">90%</div>
+                                    <div class="ring-text">AC</div>
+                                </div>
+                            </div>
+                            <div class="ring-item">
+                                <svg class="progress-ring" width="120" height="120">
+                                    <circle cx="60" cy="60" r="54" fill="none" stroke="#E5E7EB" stroke-width="8"/>
+                                    <circle cx="60" cy="60" r="54" fill="none" stroke="#10B981" stroke-width="8"
+                                            stroke-dasharray="339.292" stroke-dashoffset="0"
+                                            transform="rotate(-90 60 60)"/>
+                                </svg>
+                                <div class="ring-label">
+                                    <div class="ring-value">100%</div>
+                                    <div class="ring-text">AU</div>
+                                </div>
+                            </div>
+                            <div class="ring-item">
+                                <svg class="progress-ring" width="120" height="120">
+                                    <circle cx="60" cy="60" r="54" fill="none" stroke="#E5E7EB" stroke-width="8"/>
+                                    <circle cx="60" cy="60" r="54" fill="none" stroke="#8B5CF6" stroke-width="8"
+                                            stroke-dasharray="339.292" stroke-dashoffset="50.894"
+                                            transform="rotate(-90 60 60)"/>
+                                </svg>
+                                <div class="ring-label">
+                                    <div class="ring-value">85%</div>
+                                    <div class="ring-text">IA</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dashboard-list">
+                            <div class="list-item">
+                                <span class="check-icon">✓</span>
+                                <span>Evidence collected: 247 items</span>
+                            </div>
+                            <div class="list-item">
+                                <span class="check-icon">✓</span>
+                                <span>AI analysis: 102 controls reviewed</span>
+                            </div>
+                            <div class="list-item pending">
+                                <span class="pending-icon">⟳</span>
+                                <span>Manual review: 8 controls pending</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trust Badges -->
+    <section class="trust-section">
+        <div class="container">
+            <p class="trust-label">Certified and Trusted</p>
+            <div class="trust-badges">
+                <div class="trust-badge">
+                    <div class="badge-logo">CMMC</div>
+                    <span>CMMC 2.0 Ready</span>
+                </div>
+                <div class="trust-badge">
+                    <div class="badge-logo">DoD</div>
+                    <span>DoD Aligned</span>
+                </div>
+                <div class="trust-badge">
+                    <div class="badge-logo">NIST</div>
+                    <span>NIST 800-171</span>
+                </div>
+                <div class="trust-badge">
+                    <div class="badge-logo">SOC 2</div>
+                    <span>SOC 2 Type II</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="problem-section">
+        <div class="container">
+            <div class="section-header centered">
+                <h2>The Compliance Challenge</h2>
+                <p>Traditional CMMC compliance is slow, expensive, and overwhelming</p>
+            </div>
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <div class="problem-icon red">⏱️</div>
+                    <h3>6-12 Months</h3>
+                    <p>Average time to collect evidence and prepare documentation manually</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon orange">💰</div>
+                    <h3>$150K+ Cost</h3>
+                    <p>Between consultants, tools, and internal resources for compliance</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon yellow">📄</div>
+                    <h3>1000+ Hours</h3>
+                    <p>Spent gathering screenshots, writing narratives, and chasing evidence</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon blue">🔄</div>
+                    <h3>Constant Changes</h3>
+                    <p>Manual processes can't keep up with evolving requirements and audits</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solution Section -->
+    <section class="solution-section">
+        <div class="container">
+            <div class="section-header centered">
+                <span class="section-badge">The ComplianceFlow Difference</span>
+                <h2>Automated Compliance That Actually Works</h2>
+                <p>AI-powered automation meets assessor-grade precision</p>
+            </div>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                            <rect width="48" height="48" rx="12" fill="#DBEAFE"/>
+                            <path d="M24 14L16 18V24C16 29.18 19.02 33.92 24 36C28.98 33.92 32 29.18 32 24V18L24 14Z" fill="#2563EB"/>
+                        </svg>
+                    </div>
+                    <h3>Automated Evidence Collection</h3>
+                    <p>Integrate with Nessus, Splunk, Azure, AWS, and M365 to automatically collect and map evidence to CMMC controls. No more manual screenshots.</p>
+                    <ul class="feature-list">
+                        <li>Vulnerability scanner integration</li>
+                        <li>SIEM log aggregation</li>
+                        <li>Cloud provider evidence</li>
+                        <li>Immutable storage with chain-of-custody</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                            <rect width="48" height="48" rx="12" fill="#E0E7FF"/>
+                            <path d="M24 16C20.69 16 18 18.69 18 22C18 25.31 20.69 28 24 28C27.31 28 30 25.31 30 22C30 18.69 27.31 16 24 16ZM24 32C19.58 32 12 34.21 12 38V40H36V38C36 34.21 28.42 32 24 32Z" fill="#6366F1"/>
+                        </svg>
+                    </div>
+                    <h3>AI-Assisted Analysis</h3>
+                    <p>GPT-4 and Claude analyze your evidence against 800-171A objectives, generating assessor-grade narratives with transparent reasoning.</p>
+                    <ul class="feature-list">
+                        <li>Intelligent control analysis</li>
+                        <li>Confidence scoring</li>
+                        <li>Human-in-the-loop review</li>
+                        <li>Explainable AI decisions</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                            <rect width="48" height="48" rx="12" fill="#D1FAE5"/>
+                            <path d="M20 18H28V20H20V18ZM20 22H28V24H20V22ZM18 26H30V28H18V26ZM32 14H16C14.9 14 14 14.9 14 16V32C14 33.1 14.9 34 16 34H32C33.1 34 34 33.1 34 32V16C34 14.9 33.1 14 32 14Z" fill="#10B981"/>
+                        </svg>
+                    </div>
+                    <h3>Provider Inheritance</h3>
+                    <p>Pre-loaded documentation for M365 GCC High, Azure Government, and AWS GovCloud. Inherit 30-40% of controls automatically.</p>
+                    <ul class="feature-list">
+                        <li>Pre-written narratives</li>
+                        <li>Responsibility mapping</li>
+                        <li>Authoritative documentation</li>
+                        <li>Custom provider addition</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                            <rect width="48" height="48" rx="12" fill="#FEF3C7"/>
+                            <path d="M32 16H28.82C28.4 14.84 27.3 14 26 14C24.7 14 23.6 14.84 23.18 16H20C18.9 16 18 16.9 18 18V32C18 33.1 18.9 34 20 34H32C33.1 34 34 33.1 34 32V18C34 16.9 33.1 16 32 16ZM26 16C26.55 16 27 16.45 27 17C27 17.55 26.55 18 26 18C25.45 18 25 17.55 25 17C25 16.45 25.45 16 26 16ZM28 30H22V28H28V30ZM30 26H22V24H30V26ZM30 22H22V20H30V22Z" fill="#F59E0B"/>
+                        </svg>
+                    </div>
+                    <h3>Assessment-Ready Reports</h3>
+                    <p>Generate SSP, POA&M, and SAR documents automatically. Export in DOCX, PDF, or Excel formats ready for C3PAO review.</p>
+                    <ul class="feature-list">
+                        <li>System Security Plans (SSP)</li>
+                        <li>Plan of Action & Milestones</li>
+                        <li>Security Assessment Reports</li>
+                        <li>SPRS score calculator</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                            <rect width="48" height="48" rx="12" fill="#FCE7F3"/>
+                            <path d="M28 14H20C18.9 14 18 14.9 18 16V32C18 33.1 18.9 34 20 34H28C29.1 34 30 33.1 30 32V16C30 14.9 29.1 14 28 14ZM24 32C23.45 32 23 31.55 23 31C23 30.45 23.45 30 24 30C24.55 30 25 30.45 25 31C25 31.55 24.55 32 24 32ZM28 28H20V16H28V28Z" fill="#EC4899"/>
+                        </svg>
+                    </div>
+                    <h3>Continuous Monitoring</h3>
+                    <p>Real-time compliance scoring with automated alerts when controls drift out of compliance. Stay audit-ready 24/7.</p>
+                    <ul class="feature-list">
+                        <li>Real-time dashboards</li>
+                        <li>Drift detection</li>
+                        <li>Automated alerting</li>
+                        <li>Compliance trending</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                            <rect width="48" height="48" rx="12" fill="#E0F2FE"/>
+                            <path d="M32 18L30.59 19.41L27.17 16L28.59 14.59L30 16L35 11L36.41 12.41L32 18ZM24 18V20H12V18H24ZM32 28L30.59 29.41L27.17 26L28.59 24.59L30 26L35 21L36.41 22.41L32 28ZM24 28V30H12V28H24ZM28.59 34.59L27.17 36L30.59 39.41L32 38L36.41 42.41L35 44L30 39L28.59 40.41L25.17 37L26.59 35.59L28 37L24 33L25.41 31.59L28.59 34.59Z" fill="#0EA5E9"/>
+                        </svg>
+                    </div>
+                    <h3>Diagram Intelligence</h3>
+                    <p>AI vision models extract system architecture from your diagrams, automatically generating network documentation for your SSP.</p>
+                    <ul class="feature-list">
+                        <li>Diagram-to-graph extraction</li>
+                        <li>Network topology mapping</li>
+                        <li>Data flow documentation</li>
+                        <li>Auto-generated appendices</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <div class="container">
+            <div class="section-header centered">
+                <span class="section-badge">Simple Process</span>
+                <h2>Get Compliant in 4 Simple Steps</h2>
+                <p>From setup to certification in record time</p>
+            </div>
+            <div class="steps-container">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Connect Your Systems</h3>
+                        <p>Integrate with your existing security tools in minutes. Nessus, Splunk, Azure, AWS, M365, and more.</p>
+                        <div class="step-visual">
+                            <div class="integration-logos">
+                                <span class="logo-item">Nessus</span>
+                                <span class="logo-item">Splunk</span>
+                                <span class="logo-item">Azure</span>
+                                <span class="logo-item">AWS</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Automated Evidence Collection</h3>
+                        <p>Our AI agents automatically collect, tag, and organize evidence mapped to all 110 CMMC Level 2 controls.</p>
+                        <div class="step-visual">
+                            <div class="evidence-counter">
+                                <span class="counter-number">247</span>
+                                <span class="counter-label">Evidence Items Collected</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>AI Analysis & Review</h3>
+                        <p>GPT-4 analyzes your evidence against 800-171A objectives. You review and approve with full transparency.</p>
+                        <div class="step-visual">
+                            <div class="analysis-status">
+                                <span class="status-item complete">✓ 102 Analyzed</span>
+                                <span class="status-item pending">⟳ 8 Pending Review</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Generate Assessment Package</h3>
+                        <p>Export your complete SSP, POA&M, and SAR in professional formats ready for C3PAO assessment.</p>
+                        <div class="step-visual">
+                            <div class="document-list">
+                                <span class="doc-item">📄 SSP.docx</span>
+                                <span class="doc-item">📊 POAM.xlsx</span>
+                                <span class="doc-item">📋 SAR.pdf</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing-section" id="pricing">
+        <div class="container">
+            <div class="section-header centered">
+                <span class="section-badge">Transparent Pricing</span>
+                <h2>Choose Your Plan</h2>
+                <p>Flexible pricing for contractors of all sizes</p>
+            </div>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Starter</h3>
+                        <p>For small contractors getting started</p>
+                    </div>
+                    <div class="pricing-price">
+                        <span class="price-currency">$</span>
+                        <span class="price-amount">2,495</span>
+                        <span class="price-period">/month</span>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><span class="check">✓</span> CMMC Level 1 (17 controls)</li>
+                        <li><span class="check">✓</span> Up to 3 users</li>
+                        <li><span class="check">✓</span> 2 system integrations</li>
+                        <li><span class="check">✓</span> AI-assisted analysis</li>
+                        <li><span class="check">✓</span> SSP generation</li>
+                        <li><span class="check">✓</span> Email support</li>
+                    </ul>
+                    <a href="#demo" class="btn-outline btn-full">Start Free Trial</a>
+                </div>
+                <div class="pricing-card featured">
+                    <div class="featured-badge">Most Popular</div>
+                    <div class="pricing-header">
+                        <h3>Professional</h3>
+                        <p>For mid-size contractors</p>
+                    </div>
+                    <div class="pricing-price">
+                        <span class="price-currency">$</span>
+                        <span class="price-amount">5,995</span>
+                        <span class="price-period">/month</span>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><span class="check">✓</span> CMMC Level 2 (110 controls)</li>
+                        <li><span class="check">✓</span> Up to 10 users</li>
+                        <li><span class="check">✓</span> Unlimited integrations</li>
+                        <li><span class="check">✓</span> Advanced AI analysis</li>
+                        <li><span class="check">✓</span> SSP + POA&M + SAR generation</li>
+                        <li><span class="check">✓</span> Provider inheritance library</li>
+                        <li><span class="check">✓</span> Continuous monitoring</li>
+                        <li><span class="check">✓</span> Priority support</li>
+                    </ul>
+                    <a href="#demo" class="btn-primary btn-full">Start Free Trial</a>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Enterprise</h3>
+                        <p>For large organizations</p>
+                    </div>
+                    <div class="pricing-price">
+                        <span class="price-amount">Custom</span>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><span class="check">✓</span> Everything in Professional</li>
+                        <li><span class="check">✓</span> Unlimited users</li>
+                        <li><span class="check">✓</span> Multi-tenant management</li>
+                        <li><span class="check">✓</span> Custom integrations</li>
+                        <li><span class="check">✓</span> White-labeling</li>
+                        <li><span class="check">✓</span> Dedicated success manager</li>
+                        <li><span class="check">✓</span> SLA guarantees</li>
+                        <li><span class="check">✓</span> Custom training</li>
+                    </ul>
+                    <a href="#contact" class="btn-outline btn-full">Contact Sales</a>
+                </div>
+            </div>
+            <p class="pricing-note">All plans include a 30-day free trial. No credit card required.</p>
+        </div>
+    </section>
+
+    <!-- Social Proof -->
+    <section class="testimonials-section">
+        <div class="container">
+            <div class="section-header centered">
+                <h2>Trusted by Defense Contractors</h2>
+                <p>See what our customers are saying</p>
+            </div>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p class="testimonial-text">"ComplianceFlow reduced our CMMC prep time from 8 months to 6 weeks. The AI analysis is incredibly accurate and saved us thousands in consultant fees."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">JD</div>
+                        <div class="author-info">
+                            <div class="author-name">John Davidson</div>
+                            <div class="author-title">CISO, Aerospace Defense Solutions</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p class="testimonial-text">"The provider inheritance feature alone saved us 40% of the work. We inherited all our Azure and M365 controls with pre-written narratives. Game changer."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">SM</div>
+                        <div class="author-info">
+                            <div class="author-name">Sarah Mitchell</div>
+                            <div class="author-title">VP Compliance, Defense Tech Partners</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p class="testimonial-text">"We passed our C3PAO assessment on the first try. The evidence collection and chain-of-custody features are exactly what assessors need to see."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">MR</div>
+                        <div class="author-info">
+                            <div class="author-name">Michael Rodriguez</div>
+                            <div class="author-title">Director of IT, Maritime Systems Corp</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Ready to Accelerate Your CMMC Compliance?</h2>
+                <p>Join hundreds of defense contractors who have streamlined their compliance journey</p>
+                <div class="cta-buttons">
+                    <a href="#demo" class="btn-large btn-primary">Start Free 30-Day Trial</a>
+                    <a href="#contact" class="btn-large btn-outline-white">Schedule a Demo</a>
+                </div>
+                <p class="cta-note">No credit card required • Setup in minutes • Cancel anytime</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <div class="footer-logo">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16 2L4 8V14C4 21.18 9.02 27.92 16 30C22.98 27.92 28 21.18 28 14V8L16 2Z" fill="#2563EB"/>
+                            <path d="M14 20L10 16L11.41 14.59L14 17.17L20.59 10.58L22 12L14 20Z" fill="white"/>
+                        </svg>
+                        <span>ComplianceFlow</span>
+                    </div>
+                    <p>AI-powered CMMC compliance automation for Defense Industrial Base contractors.</p>
+                    <div class="social-links">
+                        <a href="#" aria-label="LinkedIn">in</a>
+                        <a href="#" aria-label="Twitter">𝕏</a>
+                        <a href="#" aria-label="GitHub">⚙</a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#pricing">Pricing</a></li>
+                        <li><a href="#integrations">Integrations</a></li>
+                        <li><a href="#security">Security</a></li>
+                        <li><a href="#changelog">Changelog</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="#docs">Documentation</a></li>
+                        <li><a href="#guides">CMMC Guides</a></li>
+                        <li><a href="#blog">Blog</a></li>
+                        <li><a href="#webinars">Webinars</a></li>
+                        <li><a href="#support">Support Center</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#about">About Us</a></li>
+                        <li><a href="#careers">Careers</a></li>
+                        <li><a href="#partners">Partners</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                        <li><a href="#press">Press Kit</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 ComplianceFlow. All rights reserved.</p>
+                <div class="footer-links">
+                    <a href="#privacy">Privacy Policy</a>
+                    <a href="#terms">Terms of Service</a>
+                    <a href="#compliance">Compliance</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="auth-modal">
+        <div class="auth-modal-overlay"></div>
+        <div class="auth-modal-content">
+            <button class="auth-modal-close" aria-label="Close">&times;</button>
+            <div class="auth-modal-header">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 2L4 8V14C4 21.18 9.02 27.92 16 30C22.98 27.92 28 21.18 28 14V8L16 2Z" fill="#2563EB"/>
+                        <path d="M14 20L10 16L11.41 14.59L14 17.17L20.59 10.58L22 12L14 20Z" fill="white"/>
+                    </svg>
+                    <span class="logo-text">ComplianceFlow</span>
+                </div>
+                <h2>Welcome Back</h2>
+                <p>Log in to access your compliance dashboard</p>
+            </div>
+            <form class="auth-form" id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email Address</label>
+                    <input
+                        type="email"
+                        id="loginEmail"
+                        name="email"
+                        placeholder="you@company.com"
+                        required
+                        autocomplete="email"
+                    >
+                    <span class="form-error" id="loginEmailError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <div class="password-input-wrapper">
+                        <input
+                            type="password"
+                            id="loginPassword"
+                            name="password"
+                            placeholder="Enter your password"
+                            required
+                            autocomplete="current-password"
+                        >
+                        <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                            <svg class="eye-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <span class="form-error" id="loginPasswordError"></span>
+                </div>
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="remember" id="rememberMe">
+                        <span>Remember me</span>
+                    </label>
+                    <a href="#" class="forgot-password">Forgot password?</a>
+                </div>
+                <button type="submit" class="btn-primary btn-full btn-large">
+                    <span class="btn-text">Log In</span>
+                    <span class="btn-loader"></span>
+                </button>
+                <div class="auth-divider">
+                    <span>or continue with</span>
+                </div>
+                <div class="social-auth">
+                    <button type="button" class="social-btn" data-provider="google">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z" fill="#4285F4"/>
+                            <path d="M10 20c2.7 0 4.964-.895 6.618-2.423l-3.232-2.509c-.895.6-2.04.955-3.386.955-2.605 0-4.81-1.76-5.595-4.123H1.064v2.59A9.996 9.996 0 0010 20z" fill="#34A853"/>
+                            <path d="M4.405 11.9c-.2-.6-.314-1.24-.314-1.9 0-.66.114-1.3.314-1.9V5.51H1.064A9.996 9.996 0 000 10c0 1.614.386 3.14 1.064 4.49l3.34-2.59z" fill="#FBBC05"/>
+                            <path d="M10 3.977c1.468 0 2.786.505 3.823 1.496l2.868-2.868C14.959.99 12.696 0 10 0 6.09 0 2.71 2.24 1.064 5.51l3.34 2.59C5.19 5.736 7.396 3.977 10 3.977z" fill="#EA4335"/>
+                        </svg>
+                        Google
+                    </button>
+                    <button type="button" class="social-btn" data-provider="microsoft">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M0 0h9.5v9.5H0V0z" fill="#F25022"/>
+                            <path d="M10.5 0H20v9.5h-9.5V0z" fill="#7FBA00"/>
+                            <path d="M0 10.5h9.5V20H0v-9.5z" fill="#00A4EF"/>
+                            <path d="M10.5 10.5H20V20h-9.5v-9.5z" fill="#FFB900"/>
+                        </svg>
+                        Microsoft
+                    </button>
+                </div>
+            </form>
+            <div class="auth-footer">
+                <p>Don't have an account? <a href="#" class="switch-to-signup">Sign up</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div id="signupModal" class="auth-modal">
+        <div class="auth-modal-overlay"></div>
+        <div class="auth-modal-content">
+            <button class="auth-modal-close" aria-label="Close">&times;</button>
+            <div class="auth-modal-header">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 2L4 8V14C4 21.18 9.02 27.92 16 30C22.98 27.92 28 21.18 28 14V8L16 2Z" fill="#2563EB"/>
+                        <path d="M14 20L10 16L11.41 14.59L14 17.17L20.59 10.58L22 12L14 20Z" fill="white"/>
+                    </svg>
+                    <span class="logo-text">ComplianceFlow</span>
+                </div>
+                <h2>Get Started Free</h2>
+                <p>Start your 30-day free trial. No credit card required.</p>
+            </div>
+            <form class="auth-form" id="signupForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="signupFirstName">First Name</label>
+                        <input
+                            type="text"
+                            id="signupFirstName"
+                            name="firstName"
+                            placeholder="John"
+                            required
+                            autocomplete="given-name"
+                        >
+                        <span class="form-error" id="signupFirstNameError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupLastName">Last Name</label>
+                        <input
+                            type="text"
+                            id="signupLastName"
+                            name="lastName"
+                            placeholder="Doe"
+                            required
+                            autocomplete="family-name"
+                        >
+                        <span class="form-error" id="signupLastNameError"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="signupCompany">Company Name</label>
+                    <input
+                        type="text"
+                        id="signupCompany"
+                        name="company"
+                        placeholder="Your Company Inc."
+                        required
+                        autocomplete="organization"
+                    >
+                    <span class="form-error" id="signupCompanyError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="signupEmail">Work Email</label>
+                    <input
+                        type="email"
+                        id="signupEmail"
+                        name="email"
+                        placeholder="you@company.com"
+                        required
+                        autocomplete="email"
+                    >
+                    <span class="form-error" id="signupEmailError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password</label>
+                    <div class="password-input-wrapper">
+                        <input
+                            type="password"
+                            id="signupPassword"
+                            name="password"
+                            placeholder="Create a strong password"
+                            required
+                            autocomplete="new-password"
+                        >
+                        <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                            <svg class="eye-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="password-strength">
+                        <div class="password-strength-bar">
+                            <div class="password-strength-fill"></div>
+                        </div>
+                        <span class="password-strength-text"></span>
+                    </div>
+                    <span class="form-error" id="signupPasswordError"></span>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="terms" id="acceptTerms" required>
+                        <span>I agree to the <a href="#terms" target="_blank">Terms of Service</a> and <a href="#privacy" target="_blank">Privacy Policy</a></span>
+                    </label>
+                    <span class="form-error" id="signupTermsError"></span>
+                </div>
+                <button type="submit" class="btn-primary btn-full btn-large">
+                    <span class="btn-text">Create Account</span>
+                    <span class="btn-loader"></span>
+                </button>
+                <div class="auth-divider">
+                    <span>or sign up with</span>
+                </div>
+                <div class="social-auth">
+                    <button type="button" class="social-btn" data-provider="google">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z" fill="#4285F4"/>
+                            <path d="M10 20c2.7 0 4.964-.895 6.618-2.423l-3.232-2.509c-.895.6-2.04.955-3.386.955-2.605 0-4.81-1.76-5.595-4.123H1.064v2.59A9.996 9.996 0 0010 20z" fill="#34A853"/>
+                            <path d="M4.405 11.9c-.2-.6-.314-1.24-.314-1.9 0-.66.114-1.3.314-1.9V5.51H1.064A9.996 9.996 0 000 10c0 1.614.386 3.14 1.064 4.49l3.34-2.59z" fill="#FBBC05"/>
+                            <path d="M10 3.977c1.468 0 2.786.505 3.823 1.496l2.868-2.868C14.959.99 12.696 0 10 0 6.09 0 2.71 2.24 1.064 5.51l3.34 2.59C5.19 5.736 7.396 3.977 10 3.977z" fill="#EA4335"/>
+                        </svg>
+                        Google
+                    </button>
+                    <button type="button" class="social-btn" data-provider="microsoft">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M0 0h9.5v9.5H0V0z" fill="#F25022"/>
+                            <path d="M10.5 0H20v9.5h-9.5V0z" fill="#7FBA00"/>
+                            <path d="M0 10.5h9.5V20H0v-9.5z" fill="#00A4EF"/>
+                            <path d="M10.5 10.5H20V20h-9.5v-9.5z" fill="#FFB900"/>
+                        </svg>
+                        Microsoft
+                    </button>
+                </div>
+            </form>
+            <div class="auth-footer">
+                <p>Already have an account? <a href="#" class="switch-to-login">Log in</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="assets/js/analytics.js"></script>
+    <script src="assets/js/main.js"></script>
+</body>
+</html>
