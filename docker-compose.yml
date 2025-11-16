@@ -6,8 +6,8 @@ services:
     image: pgvector/pgvector:pg16
     container_name: cmmc-postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-cmmc_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required in .env file}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in .env file}
       POSTGRES_DB: ${POSTGRES_DB:-cmmc_platform}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
@@ -48,8 +48,8 @@ services:
     container_name: cmmc-minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required in .env file}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required in .env file}
     volumes:
       - minio_data:/data
     ports:
@@ -73,11 +73,18 @@ services:
     env_file:
       - ./cmmc-platform/.env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-cmmc_admin}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-cmmc_platform}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cmmc_platform}
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       MINIO_ENDPOINT: minio:9000
+      AI_PROVIDER: ${AI_PROVIDER:-openai}
+      AI_MODEL: ${AI_MODEL:-gpt-4-turbo-preview}
+      AI_API_KEY: ${AI_API_KEY}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-openai}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      JWT_SECRET: ${JWT_SECRET}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     volumes:
       - ./cmmc-platform:/app
       - api_storage:/var/cmmc
@@ -105,11 +112,14 @@ services:
     env_file:
       - ./cmmc-platform/.env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-cmmc_admin}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-cmmc_platform}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cmmc_platform}
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       MINIO_ENDPOINT: minio:9000
+      AI_PROVIDER: ${AI_PROVIDER:-openai}
+      AI_API_KEY: ${AI_API_KEY}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     volumes:
       - ./cmmc-platform:/app
       - api_storage:/var/cmmc
