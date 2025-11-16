@@ -843,8 +843,8 @@ if (loginForm) {
         submitBtn.disabled = true;
 
         try {
-            // Replace with your actual API endpoint
-            const response = await fetch('/api/auth/login', {
+            // Call the authentication API
+            const response = await fetch('/api/v1/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -852,24 +852,37 @@ if (loginForm) {
                 body: JSON.stringify({ email, password }),
             });
 
-            // Simulate API call for demo
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            if (response.ok) {
+                // Parse response to get tokens
+                const data = await response.json();
 
-            if (response.ok || true) { // Remove "|| true" in production
+                // Store tokens in localStorage for future API calls
+                localStorage.setItem('access_token', data.access_token);
+                if (data.refresh_token) {
+                    localStorage.setItem('refresh_token', data.refresh_token);
+                }
+
                 // Success
                 trackEvent('login_success', { method: 'email' });
-                showNotification('Login successful! Redirecting...', 'success');
+                showNotification('Login successful! Welcome back!', 'success');
 
-                // Redirect to dashboard
+                // Close the login modal
                 setTimeout(() => {
-                    window.location.href = '/dashboard';
+                    const modal = document.getElementById('loginModal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                    // Reload the page to update UI with authenticated state
+                    window.location.reload();
                 }, 1000);
             } else {
-                throw new Error('Login failed');
+                // Handle error response
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail || 'Invalid email or password');
             }
         } catch (error) {
             console.error('Login error:', error);
-            showError('loginPassword', 'Invalid email or password');
+            showError('loginPassword', error.message || 'Invalid email or password');
             trackEvent('login_failed', { method: 'email', error: error.message });
         } finally {
             submitBtn.classList.remove('loading');
@@ -942,8 +955,8 @@ if (signupForm) {
         submitBtn.disabled = true;
 
         try {
-            // Replace with your actual API endpoint
-            const response = await fetch('/api/auth/signup', {
+            // Call the signup API
+            const response = await fetch('/api/v1/auth/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -957,21 +970,50 @@ if (signupForm) {
                 }),
             });
 
-            // Simulate API call for demo
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            if (response.ok || true) { // Remove "|| true" in production
-                // Success
+            if (response.ok) {
+                // Success - account created
+                const data = await response.json();
                 trackEvent('signup_success', { method: 'email' });
                 showNotification('Account created! Welcome to SmartGnosis!', 'success');
 
-                // Redirect to onboarding or dashboard
-                setTimeout(() => {
-                    window.location.href = '/onboarding';
+                // Auto-login after successful signup
+                setTimeout(async () => {
+                    try {
+                        const loginResponse = await fetch('/api/v1/auth/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ email, password }),
+                        });
+
+                        if (loginResponse.ok) {
+                            const loginData = await loginResponse.json();
+                            localStorage.setItem('access_token', loginData.access_token);
+                            if (loginData.refresh_token) {
+                                localStorage.setItem('refresh_token', loginData.refresh_token);
+                            }
+
+                            // Close signup modal and reload page
+                            const modal = document.getElementById('signupModal');
+                            if (modal) {
+                                modal.style.display = 'none';
+                            }
+                            window.location.reload();
+                        }
+                    } catch (loginError) {
+                        console.error('Auto-login error:', loginError);
+                        // Show login modal for manual login
+                        const signupModal = document.getElementById('signupModal');
+                        const loginModal = document.getElementById('loginModal');
+                        if (signupModal) signupModal.style.display = 'none';
+                        if (loginModal) loginModal.style.display = 'block';
+                    }
                 }, 1500);
             } else {
-                const data = await response.json();
-                throw new Error(data.message || 'Signup failed');
+                // Handle error response
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.detail || 'Signup failed');
             }
         } catch (error) {
             console.error('Signup error:', error);

@@ -67,6 +67,16 @@ fi
 # Generate secure secrets
 JWT_SECRET=$(openssl rand -hex 32)
 MINIO_PASSWORD=$(openssl rand -hex 16)
+MINIO_KMS_SECRET_KEY=$(openssl rand -base64 32)
+REDIS_PASSWORD=$(openssl rand -hex 16)
+
+if [[ "$AI_PROVIDER" == "openai" ]]; then
+    EMBEDDING_PROVIDER="openai"
+    EMBEDDING_MODEL="text-embedding-3-small"
+else
+    EMBEDDING_PROVIDER="$AI_PROVIDER"
+    EMBEDDING_MODEL="voyage-2"
+fi
 
 ################################################################################
 # Step 1: System Update & Basic Setup
@@ -191,10 +201,12 @@ cat > "$DEPLOY_DIR/.env" <<EOF
 POSTGRES_USER=cmmc_admin
 POSTGRES_PASSWORD=$DB_PASSWORD
 POSTGRES_DB=cmmc_platform
+REDIS_PASSWORD=$REDIS_PASSWORD
 
 # MinIO Configuration
 MINIO_ROOT_USER=minioadmin
 MINIO_ROOT_PASSWORD=$MINIO_PASSWORD
+MINIO_KMS_SECRET_KEY=$MINIO_KMS_SECRET_KEY
 
 # Domain Configuration
 DOMAIN=$DOMAIN
@@ -214,8 +226,8 @@ AI_TEMPERATURE=0.1
 AI_MAX_TOKENS=4000
 
 # Embeddings
-EMBEDDING_PROVIDER=$AI_PROVIDER
-EMBEDDING_MODEL=${AI_PROVIDER == "openai" ? "text-embedding-3-small" : "voyage-2"}
+EMBEDDING_PROVIDER=$EMBEDDING_PROVIDER
+EMBEDDING_MODEL=$EMBEDDING_MODEL
 
 # Object Storage
 MINIO_ENDPOINT=minio:9000
@@ -226,9 +238,9 @@ MINIO_USE_SSL=false
 OBJECT_STORAGE_PATH=/var/cmmc/evidence
 
 # Redis & Celery
-REDIS_URL=redis://redis:6379/0
-CELERY_BROKER_URL=redis://redis:6379/0
-CELERY_RESULT_BACKEND=redis://redis:6379/0
+REDIS_URL=redis://:$REDIS_PASSWORD@redis:6379/0
+CELERY_BROKER_URL=redis://:$REDIS_PASSWORD@redis:6379/0
+CELERY_RESULT_BACKEND=redis://:$REDIS_PASSWORD@redis:6379/0
 
 # Application
 ENVIRONMENT=production

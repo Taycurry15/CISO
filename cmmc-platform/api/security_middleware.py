@@ -302,8 +302,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if request.url.scheme == "https":
             response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
 
-        # Remove server information
-        response.headers.pop("Server", None)
+        # Remove server information (MutableHeaders has no .pop)
+        server_header = response.headers.get("Server")
+        if server_header is not None:
+            del response.headers["Server"]
 
         return response
 

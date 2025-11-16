@@ -44,6 +44,16 @@ from api.monitoring_dashboard import (
     get_evidence_statistics
 )
 
+# Import authentication
+from api.auth import (
+    login,
+    create_user,
+    LoginRequest,
+    CreateUserRequest,
+    AuthToken,
+    UserRole
+)
+
 # Note: FastAPI app initialization will be updated after lifespan is defined
 # Placeholder for now - will be moved after lifespan definition
 
@@ -501,6 +511,89 @@ logger.info("Security middleware initialized with OWASP API Security protections
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "timestamp": datetime.utcnow()}
+
+# ----------------------------------------------------------------------------
+# AUTHENTICATION ENDPOINTS
+# ----------------------------------------------------------------------------
+
+@app.post("/api/v1/auth/login", response_model=AuthToken)
+async def login_endpoint(
+    request: LoginRequest,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Authenticate user and generate JWT tokens.
+
+    Returns:
+    - access_token: JWT token for API authentication (60 min expiry)
+    - refresh_token: Token to refresh access token (30 day expiry)
+    - expires_in: Seconds until access token expires
+    """
+    return await login(request, conn)
+
+class SignupRequest(BaseModel):
+    """Signup request for new users."""
+    email: str
+    password: str
+    firstName: str
+    lastName: str
+    company: str
+
+@app.post("/api/v1/auth/signup", response_model=Dict[str, str])
+async def signup_endpoint(
+    request: SignupRequest,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Create a new user account with organization.
+
+    This endpoint:
+    1. Creates a new organization for the company
+    2. Creates a user account as the admin of that organization
+    3. Returns the user ID and success message
+    """
+    try:
+        # First, create the organization
+        org_id = await conn.fetchval(
+            """
+            INSERT INTO organizations (name, active)
+            VALUES ($1, TRUE)
+            RETURNING id
+            """,
+            request.company
+        )
+
+        # Create the user as an admin of the organization
+        full_name = f"{request.firstName} {request.lastName}"
+        user_request = CreateUserRequest(
+            email=request.email,
+            password=request.password,
+            full_name=full_name,
+            organization_id=str(org_id),
+            role=UserRole.ADMIN
+        )
+
+        user_id = await create_user(user_request, conn)
+
+        logger.info(f"New signup: {request.email} for organization {request.company}")
+
+        return {
+            "user_id": user_id,
+            "organization_id": str(org_id),
+            "message": "Account created successfully"
+        }
+
+    except Exception as e:
+        logger.error(f"Signup error: {str(e)}")
+        if "already exists" in str(e).lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User with this email already exists"
+            )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create account"
+        )
 
 @app.get("/health/ai")
 async def ai_health_check():

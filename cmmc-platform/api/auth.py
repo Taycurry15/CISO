@@ -21,6 +21,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import secrets
 import asyncpg
 import logging
+import json
 from pydantic import BaseModel
 from enum import Enum
 
@@ -526,10 +527,10 @@ async def login(
     await conn.execute(
         """
         INSERT INTO audit_log (table_name, operation, record_id, changed_by, changed_data)
-        VALUES ('users', 'login', $1, $1, $2)
+        VALUES ('users', 'login', $1, $1, $2::jsonb)
         """,
         user["id"],
-        {"email": user["email"], "timestamp": datetime.utcnow().isoformat()}
+        json.dumps({"email": user["email"], "timestamp": datetime.utcnow().isoformat()})
     )
 
     return AuthToken(
@@ -568,10 +569,10 @@ async def logout(
     await conn.execute(
         """
         INSERT INTO audit_log (table_name, operation, record_id, changed_by, changed_data)
-        VALUES ('users', 'logout', $1, $1, $2)
+        VALUES ('users', 'logout', $1, $1, $2::jsonb)
         """,
         token_data.user_id,
-        {"email": token_data.email, "timestamp": datetime.utcnow().isoformat()}
+        json.dumps({"email": token_data.email, "timestamp": datetime.utcnow().isoformat()})
     )
 
     logger.info(f"User logged out: {token_data.email}")
