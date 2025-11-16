@@ -27,13 +27,27 @@ from enum import Enum
 logger = logging.getLogger(__name__)
 
 # Security configuration
-SECRET_KEY = secrets.token_urlsafe(32)  # In production, load from environment
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
-REFRESH_TOKEN_EXPIRE_DAYS = 30
+import os
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# CRITICAL: JWT secret must be loaded from environment to persist across restarts
+SECRET_KEY = os.getenv("JWT_SECRET")
+if not SECRET_KEY:
+    raise ValueError(
+        "JWT_SECRET environment variable is required. "
+        "Generate one with: openssl rand -hex 32"
+    )
+
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRATION_MINUTES", "60"))
+REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "30"))
+BCRYPT_ROUNDS = int(os.getenv("BCRYPT_ROUNDS", "12"))
+
+# Password hashing - use configured rounds from environment
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=BCRYPT_ROUNDS
+)
 
 # Security scheme
 security = HTTPBearer()
@@ -260,7 +274,7 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Optional: Verify user still exists and is active
+    # Verify user still exists and is active, and check session validity
     if conn:
         user = await conn.fetchrow(
             "SELECT id, active FROM users WHERE id = $1",
@@ -273,6 +287,33 @@ async def get_current_user(
                 detail="User inactive or not found",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+
+        # Check if session is still valid (not revoked)
+        session_id = token_data.__dict__.get("session_id")
+        if session_id:
+            session = await conn.fetchrow(
+                """
+                SELECT active, expires_at
+                FROM user_sessions
+                WHERE id = $1 AND user_id = $2
+                """,
+                session_id,
+                token_data.user_id
+            )
+
+            if not session or not session['active']:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Session has been revoked",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+
+            if session['expires_at'] < datetime.utcnow():
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Session has expired",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
 
     return token_data
 
@@ -455,17 +496,31 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Generate unique session ID
+    session_id = secrets.token_urlsafe(32)
+
     # Create token payload
     token_data = {
         "sub": user["id"],
         "email": user["email"],
         "org_id": user["organization_id"],
-        "role": user["role"]
+        "role": user["role"],
+        "session_id": session_id
     }
 
     # Generate tokens
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
+
+    # Store session in database for revocation capability
+    await conn.execute(
+        """
+        INSERT INTO user_sessions (id, user_id, created_at, expires_at, active)
+        VALUES ($1, $2, NOW(), NOW() + INTERVAL '30 days', TRUE)
+        """,
+        session_id,
+        user["id"]
+    )
 
     # Log login
     await conn.execute(
@@ -482,6 +537,75 @@ async def login(
         refresh_token=refresh_token,
         expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
+
+
+async def logout(
+    token_data: TokenData,
+    conn: asyncpg.Connection
+) -> None:
+    """
+    Logout user by invalidating their session.
+
+    Args:
+        token_data: Current user token data
+        conn: Database connection
+    """
+    session_id = token_data.__dict__.get("session_id")
+
+    if session_id:
+        # Invalidate the session
+        await conn.execute(
+            """
+            UPDATE user_sessions
+            SET active = FALSE, revoked_at = NOW()
+            WHERE id = $1 AND user_id = $2
+            """,
+            session_id,
+            token_data.user_id
+        )
+
+    # Log logout
+    await conn.execute(
+        """
+        INSERT INTO audit_log (table_name, operation, record_id, changed_by, changed_data)
+        VALUES ('users', 'logout', $1, $1, $2)
+        """,
+        token_data.user_id,
+        {"email": token_data.email, "timestamp": datetime.utcnow().isoformat()}
+    )
+
+    logger.info(f"User logged out: {token_data.email}")
+
+
+async def logout_all_sessions(
+    user_id: str,
+    conn: asyncpg.Connection
+) -> int:
+    """
+    Logout user from all sessions.
+
+    Args:
+        user_id: User ID
+        conn: Database connection
+
+    Returns:
+        Number of sessions invalidated
+    """
+    result = await conn.execute(
+        """
+        UPDATE user_sessions
+        SET active = FALSE, revoked_at = NOW()
+        WHERE user_id = $1 AND active = TRUE
+        """,
+        user_id
+    )
+
+    # Extract row count from result
+    count = int(result.split()[-1]) if result else 0
+
+    logger.info(f"User {user_id} logged out from {count} sessions")
+
+    return count
 
 
 # =============================================================================
