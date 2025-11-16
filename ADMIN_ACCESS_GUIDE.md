@@ -1,30 +1,11 @@
 # SmartGnosis Admin Access Guide
 
-## Admin User Created Successfully! ✓
-
-I've created an admin user for you and fixed the authentication flow.
-
-### Your Admin Credentials
-
-```
-Email:    taycurry15@gmail.com
-Password: Admin@2024!
-Role:     ADMIN
-```
-
-**IMPORTANT**: Please change your password after first login!
-
----
-
-## How to Access the Application
 
 ### Option 1: Email Login (Recommended for Testing)
 
 1. Go to **https://smartgnosis.com**
 2. Click the **"Log In"** button in the navigation
 3. Enter your credentials:
-   - Email: `taycurry15@gmail.com`
-   - Password: `Admin@2024!`
 4. Click **"Sign In"**
 5. You'll be automatically redirected to the dashboard
 
@@ -55,13 +36,6 @@ Role:     ADMIN
      - Role and status
      - Preview of upcoming features
 
-4. **✓ Admin User Creation**: You needed full access to the platform
-   - **Fixed**: Created admin user with:
-     - Admin role
-     - Active status
-     - Organization: "SmartGnosis Admin"
-     - User ID: `e53fce70-7c4a-46a1-91a2-984f1c1ecb31`
-     - Organization ID: `b67eb787-7b3c-4b36-9c24-19a19ba4e5f0`
 
 ---
 
@@ -140,7 +114,7 @@ docker logs cmmc-api
 docker logs cmmc-nginx
 
 # Verify user in database
-docker exec cmmc-postgres psql -U cmmc_admin -d cmmc_platform -c "SELECT email, role, active FROM users WHERE email = 'taycurry15@gmail.com';"
+docker exec cmmc-postgres psql -U cmmc_admin -d cmmc_platform -c "SELECT email, role, active FROM users WHERE email = '[EMAIL]';"
 ```
 
 ### If OAuth fails:
