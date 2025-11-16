@@ -33,6 +33,70 @@ from monitoring_dashboard import (
     get_evidence_statistics
 )
 
+# Import authentication
+from auth import (
+    TokenData,
+    LoginRequest,
+    CreateUserRequest,
+    APIKeyRequest,
+    login,
+    create_user,
+    create_api_key,
+    get_current_user,
+    get_current_admin_user,
+    get_current_assessor_user
+)
+
+# Import onboarding
+from onboarding import (
+    OnboardingWorkflow,
+    OrganizationOnboardingRequest
+)
+
+# Import customer portal
+from customer_portal import (
+    CustomerPortalService,
+    OrganizationProfileUpdate,
+    TeamMemberInvite,
+    AssessmentCreateRequest,
+    NotificationPreferences,
+    ReportDownloadRequest
+)
+
+# Import billing
+from billing import (
+    BillingService,
+    CreateSubscriptionRequest,
+    UpdateSubscriptionRequest,
+    PaymentMethodRequest
+)
+
+# Import white label
+from white_label import (
+    WhiteLabelService,
+    BrandingConfig,
+    EmailTemplateConfig,
+    TerminologyCustomization
+)
+
+# Import C3PAO workflow
+from c3pao_workflow import (
+    C3PAOWorkflowService,
+    C3PAORegistration,
+    AssessmentAssignment,
+    FindingReview,
+    AssessmentPhaseUpdate
+)
+
+# Import assessment scheduling
+from assessment_scheduling import (
+    AssessmentSchedulingService,
+    ScheduleEventRequest,
+    UpdateEventRequest,
+    AssessorAvailability,
+    MilestoneRequest
+)
+
 # Initialize FastAPI
 app = FastAPI(
     title="CMMC Compliance Platform API",
@@ -998,6 +1062,725 @@ async def evidence_statistics(
     - Recent uploads
     """
     return await get_evidence_statistics(str(assessment_id), conn)
+
+# ----------------------------------------------------------------------------
+# AUTHENTICATION & USER MANAGEMENT
+# ----------------------------------------------------------------------------
+
+@app.post("/api/v1/auth/login")
+async def user_login(
+    request: LoginRequest,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    User login endpoint.
+
+    Returns JWT access and refresh tokens.
+    """
+    return await login(request, conn)
+
+@app.post("/api/v1/auth/register")
+async def register_user(
+    request: CreateUserRequest,
+    current_user: TokenData = Depends(get_current_admin_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Register a new user (admin only).
+
+    Returns user ID.
+    """
+    user_id = await create_user(request, conn)
+    return {"user_id": user_id, "email": request.email}
+
+@app.post("/api/v1/auth/api-keys")
+async def generate_api_key(
+    request: APIKeyRequest,
+    current_user: TokenData = Depends(get_current_admin_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Generate API key for integrations (admin only).
+
+    Returns API key (shown only once).
+    """
+    return await create_api_key(
+        request,
+        current_user.user_id,
+        current_user.organization_id,
+        conn
+    )
+
+@app.get("/api/v1/auth/me")
+async def get_current_user_info(
+    current_user: TokenData = Depends(get_current_user)
+):
+    """
+    Get current authenticated user information.
+    """
+    return {
+        "user_id": current_user.user_id,
+        "email": current_user.email,
+        "organization_id": current_user.organization_id,
+        "role": current_user.role
+    }
+
+# ----------------------------------------------------------------------------
+# ORGANIZATION ONBOARDING
+# ----------------------------------------------------------------------------
+
+@app.post("/api/v1/onboarding/start")
+async def start_onboarding(
+    request: OrganizationOnboardingRequest,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Start organization onboarding workflow.
+
+    Creates:
+    - Organization
+    - Admin user
+    - Initial assessment
+    - Integration configurations (if enabled)
+    """
+    workflow = OnboardingWorkflow(conn)
+    return await workflow.start_onboarding(request)
+
+@app.get("/api/v1/onboarding/{onboarding_id}/status")
+async def get_onboarding_status(
+    onboarding_id: UUID4,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get onboarding workflow status.
+    """
+    workflow = OnboardingWorkflow(conn)
+    return await workflow.get_onboarding_status(str(onboarding_id))
+
+# ----------------------------------------------------------------------------
+# CUSTOMER PORTAL
+# ----------------------------------------------------------------------------
+
+@app.get("/api/v1/portal/organization")
+async def get_org_profile(
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get organization profile.
+    """
+    portal = CustomerPortalService(conn)
+    return await portal.get_organization_profile(current_user.organization_id)
+
+@app.put("/api/v1/portal/organization")
+async def update_org_profile(
+    updates: OrganizationProfileUpdate,
+    current_user: TokenData = Depends(get_current_admin_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Update organization profile (admin only).
+    """
+    portal = CustomerPortalService(conn)
+    return await portal.update_organization_profile(
+        current_user.organization_id,
+        updates,
+        current_user.user_id
+    )
+
+@app.get("/api/v1/portal/team")
+async def get_team_members(
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get all team members.
+    """
+    portal = CustomerPortalService(conn)
+    return await portal.get_team_members(current_user.organization_id)
+
+@app.post("/api/v1/portal/team/invite")
+async def invite_team_member(
+    invite: TeamMemberInvite,
+    current_user: TokenData = Depends(get_current_admin_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Invite a new team member (admin only).
+    """
+    portal = CustomerPortalService(conn)
+    return await portal.invite_team_member(
+        current_user.organization_id,
+        invite,
+        current_user.user_id
+    )
+
+@app.delete("/api/v1/portal/team/{user_id}")
+async def remove_team_member(
+    user_id: UUID4,
+    current_user: TokenData = Depends(get_current_admin_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Remove a team member (admin only).
+    """
+    portal = CustomerPortalService(conn)
+    await portal.remove_team_member(
+        str(user_id),
+        current_user.organization_id,
+        current_user.user_id
+    )
+    return {"status": "removed", "user_id": str(user_id)}
+
+@app.post("/api/v1/portal/assessments")
+async def create_portal_assessment(
+    request: AssessmentCreateRequest,
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Create a new assessment (self-service).
+    """
+    portal = CustomerPortalService(conn)
+    return await portal.create_assessment(
+        current_user.organization_id,
+        request,
+        current_user.user_id
+    )
+
+@app.get("/api/v1/portal/assessments")
+async def get_portal_assessments(
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get all assessments for organization.
+    """
+    portal = CustomerPortalService(conn)
+    return await portal.get_assessments(current_user.organization_id)
+
+@app.get("/api/v1/portal/preferences")
+async def get_preferences(
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get notification preferences.
+    """
+    portal = CustomerPortalService(conn)
+    return await portal.get_notification_preferences(current_user.user_id)
+
+@app.put("/api/v1/portal/preferences")
+async def update_preferences(
+    preferences: NotificationPreferences,
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Update notification preferences.
+    """
+    portal = CustomerPortalService(conn)
+    return await portal.update_notification_preferences(
+        current_user.user_id,
+        preferences
+    )
+
+@app.post("/api/v1/portal/reports/generate")
+async def generate_report(
+    request: ReportDownloadRequest,
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Generate a report for download.
+    """
+    portal = CustomerPortalService(conn)
+    return await portal.generate_report_download(
+        request,
+        current_user.organization_id
+    )
+
+@app.get("/api/v1/portal/activity")
+async def get_activity(
+    limit: int = 100,
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get organization activity history.
+    """
+    portal = CustomerPortalService(conn)
+    return await portal.get_activity_history(
+        current_user.organization_id,
+        limit
+    )
+
+# ----------------------------------------------------------------------------
+# BILLING & SUBSCRIPTIONS
+# ----------------------------------------------------------------------------
+
+@app.post("/api/v1/billing/subscriptions")
+async def create_subscription(
+    request: CreateSubscriptionRequest,
+    current_user: TokenData = Depends(get_current_admin_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Create a new subscription (admin only).
+    """
+    billing = BillingService(conn)
+    return await billing.create_subscription(
+        current_user.organization_id,
+        request
+    )
+
+@app.get("/api/v1/billing/subscription")
+async def get_subscription(
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get current subscription.
+    """
+    billing = BillingService(conn)
+    return await billing.get_subscription(current_user.organization_id)
+
+@app.put("/api/v1/billing/subscription")
+async def update_subscription(
+    request: UpdateSubscriptionRequest,
+    current_user: TokenData = Depends(get_current_admin_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Update subscription (upgrade/downgrade) - admin only.
+    """
+    billing = BillingService(conn)
+    return await billing.update_subscription(
+        current_user.organization_id,
+        request
+    )
+
+@app.delete("/api/v1/billing/subscription")
+async def cancel_subscription(
+    immediate: bool = False,
+    current_user: TokenData = Depends(get_current_admin_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Cancel subscription (admin only).
+    """
+    billing = BillingService(conn)
+    return await billing.cancel_subscription(
+        current_user.organization_id,
+        immediate
+    )
+
+@app.get("/api/v1/billing/invoices")
+async def get_invoices(
+    limit: int = 12,
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get invoices for organization.
+    """
+    billing = BillingService(conn)
+    return await billing.get_invoices(current_user.organization_id, limit)
+
+@app.post("/api/v1/billing/webhook")
+async def stripe_webhook(
+    event_type: str,
+    event_data: Dict[str, Any],
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Stripe webhook endpoint.
+
+    Handles: invoice.paid, invoice.payment_failed,
+             customer.subscription.updated, customer.subscription.deleted
+    """
+    billing = BillingService(conn)
+    success = await billing.handle_stripe_webhook(event_type, event_data)
+    return {"status": "success" if success else "error"}
+
+# ----------------------------------------------------------------------------
+# WHITE-LABELING
+# ----------------------------------------------------------------------------
+
+@app.get("/api/v1/white-label/branding")
+async def get_branding(
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get white-label branding configuration.
+    """
+    white_label = WhiteLabelService(conn)
+    return await white_label.get_branding(current_user.organization_id)
+
+@app.put("/api/v1/white-label/branding")
+async def update_branding(
+    config: BrandingConfig,
+    current_user: TokenData = Depends(get_current_admin_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Update white-label branding (admin only, Professional/Enterprise plans).
+    """
+    white_label = WhiteLabelService(conn)
+    return await white_label.update_branding(
+        current_user.organization_id,
+        config,
+        current_user.user_id
+    )
+
+@app.get("/api/v1/white-label/email-templates")
+async def get_email_templates(
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get custom email templates.
+    """
+    white_label = WhiteLabelService(conn)
+    return await white_label.get_email_templates(current_user.organization_id)
+
+@app.put("/api/v1/white-label/email-templates")
+async def update_email_templates(
+    config: EmailTemplateConfig,
+    current_user: TokenData = Depends(get_current_admin_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Update email templates (admin only).
+    """
+    white_label = WhiteLabelService(conn)
+    return await white_label.update_email_templates(
+        current_user.organization_id,
+        config,
+        current_user.user_id
+    )
+
+@app.get("/api/v1/white-label/terminology")
+async def get_terminology(
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get custom terminology.
+    """
+    white_label = WhiteLabelService(conn)
+    return await white_label.get_terminology(current_user.organization_id)
+
+@app.put("/api/v1/white-label/terminology")
+async def update_terminology(
+    config: TerminologyCustomization,
+    current_user: TokenData = Depends(get_current_admin_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Update custom terminology (admin only).
+    """
+    white_label = WhiteLabelService(conn)
+    return await white_label.update_terminology(
+        current_user.organization_id,
+        config,
+        current_user.user_id
+    )
+
+@app.get("/api/v1/white-label/custom.css")
+async def get_custom_css(
+    organization_id: UUID4,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get custom CSS for white-label portal.
+    """
+    white_label = WhiteLabelService(conn)
+    css = await white_label.get_custom_css(str(organization_id))
+    return {"css": css}
+
+# ----------------------------------------------------------------------------
+# C3PAO WORKFLOW
+# ----------------------------------------------------------------------------
+
+@app.post("/api/v1/c3pao/register")
+async def register_c3pao(
+    registration: C3PAORegistration,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Register a new C3PAO organization.
+    """
+    c3pao = C3PAOWorkflowService(conn)
+    return await c3pao.register_c3pao(registration)
+
+@app.get("/api/v1/c3pao/{c3pao_id}")
+async def get_c3pao(
+    c3pao_id: UUID4,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get C3PAO organization details.
+    """
+    c3pao = C3PAOWorkflowService(conn)
+    return await c3pao.get_c3pao_details(str(c3pao_id))
+
+@app.post("/api/v1/c3pao/assessments/assign")
+async def assign_c3pao_assessment(
+    assignment: AssessmentAssignment,
+    current_user: TokenData = Depends(get_current_admin_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Assign C3PAO to assessment (admin only).
+    """
+    c3pao = C3PAOWorkflowService(conn)
+    return await c3pao.assign_assessment(assignment, current_user.user_id)
+
+@app.put("/api/v1/c3pao/assessments/{c3pao_assessment_id}/phase")
+async def update_assessment_phase(
+    c3pao_assessment_id: UUID4,
+    update: AssessmentPhaseUpdate,
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Update C3PAO assessment phase.
+    """
+    c3pao = C3PAOWorkflowService(conn)
+    return await c3pao.update_assessment_phase(
+        str(c3pao_assessment_id),
+        update,
+        current_user.user_id
+    )
+
+@app.post("/api/v1/c3pao/findings/review")
+async def review_finding(
+    review: FindingReview,
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Review and validate a finding (C3PAO assessors).
+    """
+    c3pao = C3PAOWorkflowService(conn)
+    return await c3pao.review_finding(review, current_user.user_id)
+
+@app.get("/api/v1/c3pao/assessments/{c3pao_assessment_id}/findings")
+async def get_findings_for_review(
+    c3pao_assessment_id: UUID4,
+    status_filter: Optional[str] = None,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get findings pending review for C3PAO assessment.
+    """
+    c3pao = C3PAOWorkflowService(conn)
+    return await c3pao.get_findings_for_review(
+        str(c3pao_assessment_id),
+        status_filter
+    )
+
+@app.post("/api/v1/c3pao/assessments/{c3pao_assessment_id}/report")
+async def generate_c3pao_report(
+    c3pao_assessment_id: UUID4,
+    report_type: str = "final",
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Generate C3PAO assessment report.
+    """
+    c3pao = C3PAOWorkflowService(conn)
+    return await c3pao.generate_assessment_report(
+        str(c3pao_assessment_id),
+        report_type
+    )
+
+@app.post("/api/v1/c3pao/reports/{report_id}/approve")
+async def approve_c3pao_report(
+    report_id: UUID4,
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Approve C3PAO assessment report.
+    """
+    c3pao = C3PAOWorkflowService(conn)
+    return await c3pao.approve_report(str(report_id), current_user.user_id)
+
+@app.post("/api/v1/c3pao/assessments/{c3pao_assessment_id}/communicate")
+async def send_client_update(
+    c3pao_assessment_id: UUID4,
+    subject: str,
+    message: str,
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Send update to client.
+    """
+    c3pao = C3PAOWorkflowService(conn)
+    return await c3pao.send_client_update(
+        str(c3pao_assessment_id),
+        subject,
+        message,
+        current_user.user_id
+    )
+
+# ----------------------------------------------------------------------------
+# ASSESSMENT SCHEDULING
+# ----------------------------------------------------------------------------
+
+@app.post("/api/v1/scheduling/events")
+async def schedule_event(
+    request: ScheduleEventRequest,
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Schedule an assessment event.
+    """
+    scheduler = AssessmentSchedulingService(conn)
+    return await scheduler.schedule_event(request, current_user.user_id)
+
+@app.get("/api/v1/scheduling/events/{event_id}")
+async def get_event(
+    event_id: UUID4,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get event details.
+    """
+    scheduler = AssessmentSchedulingService(conn)
+    return await scheduler.get_event(str(event_id))
+
+@app.put("/api/v1/scheduling/events/{event_id}")
+async def update_event(
+    event_id: UUID4,
+    update: UpdateEventRequest,
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Update scheduled event.
+    """
+    scheduler = AssessmentSchedulingService(conn)
+    return await scheduler.update_event(
+        str(event_id),
+        update,
+        current_user.user_id
+    )
+
+@app.delete("/api/v1/scheduling/events/{event_id}")
+async def cancel_event(
+    event_id: UUID4,
+    reason: Optional[str] = None,
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Cancel scheduled event.
+    """
+    scheduler = AssessmentSchedulingService(conn)
+    await scheduler.cancel_event(str(event_id), current_user.user_id, reason)
+    return {"status": "canceled", "event_id": str(event_id)}
+
+@app.get("/api/v1/scheduling/calendar/assessment/{assessment_id}")
+async def get_assessment_calendar(
+    assessment_id: UUID4,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get calendar view for assessment.
+    """
+    scheduler = AssessmentSchedulingService(conn)
+    return await scheduler.get_assessment_calendar(
+        str(assessment_id),
+        start_date,
+        end_date
+    )
+
+@app.get("/api/v1/scheduling/calendar/my")
+async def get_my_calendar(
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get user's personal calendar.
+    """
+    scheduler = AssessmentSchedulingService(conn)
+    return await scheduler.get_user_calendar(
+        current_user.user_id,
+        start_date,
+        end_date
+    )
+
+@app.post("/api/v1/scheduling/availability")
+async def set_availability(
+    availability: AssessorAvailability,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Set assessor availability.
+    """
+    scheduler = AssessmentSchedulingService(conn)
+    return await scheduler.set_availability(availability)
+
+@app.get("/api/v1/scheduling/availability/available")
+async def get_available_assessors(
+    date: date,
+    start_time: time,
+    end_time: time,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get available assessors for a time slot.
+    """
+    scheduler = AssessmentSchedulingService(conn)
+    return await scheduler.get_available_assessors(date, start_time, end_time)
+
+@app.post("/api/v1/scheduling/milestones")
+async def create_milestone(
+    request: MilestoneRequest,
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Create assessment milestone.
+    """
+    scheduler = AssessmentSchedulingService(conn)
+    return await scheduler.create_milestone(request, current_user.user_id)
+
+@app.post("/api/v1/scheduling/milestones/{milestone_id}/complete")
+async def complete_milestone(
+    milestone_id: UUID4,
+    current_user: TokenData = Depends(get_current_user),
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Mark milestone as complete.
+    """
+    scheduler = AssessmentSchedulingService(conn)
+    return await scheduler.complete_milestone(
+        str(milestone_id),
+        current_user.user_id
+    )
+
+@app.get("/api/v1/scheduling/milestones/assessment/{assessment_id}")
+async def get_milestones(
+    assessment_id: UUID4,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Get all milestones for assessment.
+    """
+    scheduler = AssessmentSchedulingService(conn)
+    return await scheduler.get_milestones(str(assessment_id))
 
 if __name__ == "__main__":
     import uvicorn
