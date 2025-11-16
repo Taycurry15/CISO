@@ -13,6 +13,16 @@ import asyncpg
 import asyncio
 from pathlib import Path
 import logging
+import os
+
+# Import AI/RAG services
+from services import (
+    create_embedding_service,
+    create_ai_analyzer,
+    RAGService,
+    EmbeddingService,
+    AIAnalyzer
+)
 
 # Initialize FastAPI
 app = FastAPI(
@@ -33,12 +43,25 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 class Config:
-    DATABASE_URL = "postgresql://user:pass@localhost:5432/cmmc_platform"
-    OBJECT_STORAGE_PATH = "/var/cmmc/evidence"
-    VECTOR_EMBEDDING_MODEL = "text-embedding-ada-002"  # or local model
-    AI_MODEL = "gpt-4"  # or claude-3-5-sonnet
-    
+    DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:pass@localhost:5432/cmmc_platform")
+    OBJECT_STORAGE_PATH = os.getenv("OBJECT_STORAGE_PATH", "/var/cmmc/evidence")
+
+    # AI Configuration
+    AI_PROVIDER = os.getenv("AI_PROVIDER", "openai")  # openai or anthropic
+    AI_MODEL = os.getenv("AI_MODEL", "gpt-4-turbo-preview")
+    AI_API_KEY = os.getenv("AI_API_KEY", "")
+
+    # Embedding Configuration
+    EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "openai")  # openai or sentence_transformers
+    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    EMBEDDING_API_KEY = os.getenv("EMBEDDING_API_KEY", "")  # Use AI_API_KEY if not set
+
 config = Config()
+
+# Global service instances
+embedding_service: Optional[EmbeddingService] = None
+rag_service: Optional[RAGService] = None
+ai_analyzer: Optional[AIAnalyzer] = None
 
 # ============================================================================
 # DATABASE CONNECTION POOL
@@ -248,10 +271,15 @@ async def chunk_document(text: str, max_chunk_size: int = 1000) -> List[str]:
 
 async def generate_embedding(text: str) -> List[float]:
     """Generate vector embedding for semantic search"""
-    # Placeholder - integrate with OpenAI, Cohere, or local model
-    # For now, return dummy embedding
-    logger.warning("Using placeholder embedding - integrate with actual embedding service")
-    return [0.0] * 1536  # ada-002 dimension
+    if not embedding_service:
+        logger.warning("Embedding service not available, using zero vector")
+        return [0.0] * 1536
+
+    try:
+        return await embedding_service.generate_embedding(text)
+    except Exception as e:
+        logger.error(f"Embedding generation failed: {e}")
+        return [0.0] * 1536
 
 async def analyze_control_with_ai(
     control_id: str,
@@ -259,63 +287,91 @@ async def analyze_control_with_ai(
     evidence_items: List[Dict],
     provider_inheritance: Optional[Dict],
     graph_context: Optional[Dict],
-    conn: asyncpg.Connection
+    conn: asyncpg.Connection,
+    assessment_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """Use AI to analyze control compliance based on evidence"""
-    
+
     # Get control and objective details
     control = await conn.fetchrow(
         "SELECT * FROM controls WHERE id = $1",
         control_id
     )
-    
+
     objective = None
     if objective_id:
         objective = await conn.fetchrow(
             "SELECT * FROM assessment_objectives WHERE id = $1",
             objective_id
         )
-    
-    # Build context for AI
-    context = {
-        "control": dict(control) if control else None,
-        "objective": dict(objective) if objective else None,
-        "evidence_count": len(evidence_items),
-        "has_provider_inheritance": provider_inheritance is not None,
-        "has_diagram_context": graph_context is not None
-    }
-    
-    # In production, call actual AI model (GPT-4, Claude, etc.)
-    # For now, return mock analysis
-    logger.warning("Using mock AI analysis - integrate with actual AI service")
-    
-    # Simple heuristic: if we have evidence, mark as Met
+
+    if not control:
+        raise ValueError(f"Control {control_id} not found")
+
+    # Use AI analyzer if available
+    if ai_analyzer and assessment_id:
+        try:
+            # Prepare control data
+            control_data = {
+                'id': control['id'],
+                'title': control['title'],
+                'requirement_text': control['requirement_text'],
+                'objective_id': objective_id,
+                'objective_text': objective['determination_statement'] if objective else None,
+                'method': objective['method'] if objective else None
+            }
+
+            # Call AI analyzer
+            analysis = await ai_analyzer.analyze_control(
+                control_data=control_data,
+                evidence_items=evidence_items,
+                assessment_id=assessment_id,
+                include_rag=True,
+                provider_inheritance=provider_inheritance,
+                graph_context=graph_context
+            )
+
+            # Map AI response to expected format
+            return {
+                "status": analysis.get('determination', 'Not Assessed'),
+                "confidence_score": analysis.get('confidence_score', 0.0),
+                "narrative": analysis.get('assessor_narrative', ''),
+                "rationale": analysis.get('rationale', ''),
+                "evidence_ids": [e.get("id") for e in evidence_items if e.get("id")],
+                "key_findings": analysis.get('key_findings', []),
+                "gaps_identified": analysis.get('gaps_identified', []),
+                "recommendations": analysis.get('recommendations', [])
+            }
+
+        except Exception as e:
+            logger.error(f"AI analysis failed: {e}")
+            # Fall through to fallback logic
+
+    # Fallback: simple heuristic if AI unavailable
+    logger.warning("Using fallback heuristic analysis (AI service unavailable)")
+
     if len(evidence_items) >= 2:
         status = "Met"
-        confidence = 85.0
+        confidence = 75.0
         narrative = f"The organization has demonstrated compliance with {control_id}. "
         if provider_inheritance:
             narrative += f"This control leverages {provider_inheritance['provider_name']} inheritance for {provider_inheritance['responsibility']} responsibilities. "
         narrative += f"Evidence review shows {len(evidence_items)} supporting artifacts."
     else:
         status = "Not Met"
-        confidence = 60.0
+        confidence = 50.0
         narrative = f"Insufficient evidence to demonstrate compliance with {control_id}. "
         narrative += f"Only {len(evidence_items)} evidence item(s) provided. Additional documentation required."
-    
-    rationale = f"Analysis based on {len(evidence_items)} evidence items, "
-    if provider_inheritance:
-        rationale += "provider inheritance documentation, "
-    if graph_context:
-        rationale += "system architecture context, "
-    rationale += f"and assessment objective {objective_id or 'general'}."
-    
+
+    rationale = f"Heuristic analysis based on {len(evidence_items)} evidence items. "
+    rationale += "Note: AI-assisted analysis unavailable."
+
     return {
         "status": status,
         "confidence_score": confidence,
         "narrative": narrative,
         "rationale": rationale,
-        "evidence_ids": [e["id"] for e in evidence_items]
+        "evidence_ids": [e.get("id") for e in evidence_items if e.get("id")]
     }
 
 # ============================================================================
@@ -324,9 +380,53 @@ async def analyze_control_with_ai(
 
 @app.on_event("startup")
 async def startup():
-    """Initialize database pool on startup"""
+    """Initialize database pool and AI services on startup"""
+    global embedding_service, rag_service, ai_analyzer
+
+    # Initialize database pool
     await get_db_pool()
     logger.info("Database pool initialized")
+
+    # Initialize embedding service
+    try:
+        embedding_api_key = config.EMBEDDING_API_KEY or config.AI_API_KEY
+        embedding_service = create_embedding_service(
+            provider=config.EMBEDDING_PROVIDER,
+            api_key=embedding_api_key,
+            model_name=config.EMBEDDING_MODEL
+        )
+        logger.info(f"Embedding service initialized: {config.EMBEDDING_PROVIDER}/{config.EMBEDDING_MODEL}")
+    except Exception as e:
+        logger.warning(f"Failed to initialize embedding service: {e}")
+        embedding_service = None
+
+    # Initialize RAG service
+    try:
+        if embedding_service:
+            pool = await get_db_pool()
+            rag_service = RAGService(
+                embedding_service=embedding_service,
+                db_pool=pool
+            )
+            logger.info("RAG service initialized")
+        else:
+            logger.warning("RAG service not initialized (embedding service unavailable)")
+    except Exception as e:
+        logger.warning(f"Failed to initialize RAG service: {e}")
+        rag_service = None
+
+    # Initialize AI analyzer
+    try:
+        ai_analyzer = create_ai_analyzer(
+            provider=config.AI_PROVIDER,
+            api_key=config.AI_API_KEY,
+            model_name=config.AI_MODEL,
+            rag_service=rag_service
+        )
+        logger.info(f"AI analyzer initialized: {config.AI_PROVIDER}/{config.AI_MODEL}")
+    except Exception as e:
+        logger.warning(f"Failed to initialize AI analyzer: {e}")
+        ai_analyzer = None
 
 @app.on_event("shutdown")
 async def shutdown():
@@ -340,6 +440,69 @@ async def shutdown():
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "timestamp": datetime.utcnow()}
+
+@app.get("/health/ai")
+async def ai_health_check():
+    """Health check for AI/RAG services"""
+    health_status = {
+        "timestamp": datetime.utcnow().isoformat(),
+        "services": {}
+    }
+
+    # Check embedding service
+    if embedding_service:
+        try:
+            embed_health = await embedding_service.healthcheck()
+            health_status["services"]["embedding"] = embed_health
+        except Exception as e:
+            health_status["services"]["embedding"] = {
+                "status": "error",
+                "error": str(e)
+            }
+    else:
+        health_status["services"]["embedding"] = {
+            "status": "not_initialized"
+        }
+
+    # Check RAG service
+    if rag_service:
+        try:
+            rag_health = await rag_service.healthcheck()
+            health_status["services"]["rag"] = rag_health
+        except Exception as e:
+            health_status["services"]["rag"] = {
+                "status": "error",
+                "error": str(e)
+            }
+    else:
+        health_status["services"]["rag"] = {
+            "status": "not_initialized"
+        }
+
+    # Check AI analyzer
+    if ai_analyzer:
+        try:
+            ai_health = await ai_analyzer.healthcheck()
+            health_status["services"]["ai_analyzer"] = ai_health
+        except Exception as e:
+            health_status["services"]["ai_analyzer"] = {
+                "status": "error",
+                "error": str(e)
+            }
+    else:
+        health_status["services"]["ai_analyzer"] = {
+            "status": "not_initialized"
+        }
+
+    # Overall status
+    all_healthy = all(
+        svc.get("status") == "healthy"
+        for svc in health_status["services"].values()
+        if isinstance(svc, dict)
+    )
+    health_status["overall_status"] = "healthy" if all_healthy else "degraded"
+
+    return health_status
 
 # ----------------------------------------------------------------------------
 # DOCUMENT INGESTION
@@ -385,32 +548,58 @@ async def ingest_document(
     )
     
     chunks_created = 0
-    
+
     if request.auto_chunk:
         # TODO: Actual text extraction from PDF/DOCX
-        # For now, use placeholder
-        text = "Placeholder text content"
-        
-        chunks = await chunk_document(text)
-        
-        for idx, chunk_text in enumerate(chunks):
-            embedding = None
-            if request.auto_embed:
-                embedding = await generate_embedding(chunk_text)
-            
-            await conn.execute(
-                """
-                INSERT INTO document_chunks 
-                (document_id, chunk_index, chunk_text, control_id, embedding)
-                VALUES ($1, $2, $3, $4, $5)
-                """,
-                document_id,
-                idx,
-                chunk_text,
-                request.control_id,
-                embedding
-            )
-            chunks_created += 1
+        # For now, use placeholder text
+        text = "Placeholder text content - implement PDF/DOCX extraction"
+
+        # Use RAG service for chunking and embedding if available
+        if rag_service and request.auto_embed:
+            try:
+                chunks_created = await rag_service.chunk_and_embed_document(
+                    document_id=str(document_id),
+                    text=text,
+                    control_id=request.control_id,
+                    doc_type=request.document_type
+                )
+            except Exception as e:
+                logger.error(f"RAG service chunking failed: {e}")
+                # Fallback to simple chunking
+                chunks = await chunk_document(text)
+                for idx, chunk_text in enumerate(chunks):
+                    embedding = await generate_embedding(chunk_text) if request.auto_embed else None
+                    await conn.execute(
+                        """
+                        INSERT INTO document_chunks
+                        (document_id, chunk_index, chunk_text, control_id, embedding)
+                        VALUES ($1, $2, $3, $4, $5)
+                        """,
+                        document_id,
+                        idx,
+                        chunk_text,
+                        request.control_id,
+                        embedding
+                    )
+                    chunks_created += 1
+        else:
+            # Fallback to simple chunking
+            chunks = await chunk_document(text)
+            for idx, chunk_text in enumerate(chunks):
+                embedding = await generate_embedding(chunk_text) if request.auto_embed else None
+                await conn.execute(
+                    """
+                    INSERT INTO document_chunks
+                    (document_id, chunk_index, chunk_text, control_id, embedding)
+                    VALUES ($1, $2, $3, $4, $5)
+                    """,
+                    document_id,
+                    idx,
+                    chunk_text,
+                    request.control_id,
+                    embedding
+                )
+                chunks_created += 1
     
     end_time = datetime.utcnow()
     processing_time = int((end_time - start_time).total_seconds() * 1000)
@@ -506,7 +695,8 @@ async def analyze_control(
         evidence_items,
         provider_inheritance,
         graph_context,
-        conn
+        conn,
+        assessment_id=str(request.assessment_id)
     )
     
     # Create finding record

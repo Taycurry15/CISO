@@ -1,0 +1,140 @@
+{
+  "documents": [
+    {
+      "id": "nist-800-171-r2",
+      "title": "NIST SP 800-171 Rev 2: Protecting Controlled Unclassified Information",
+      "filename": "nist/NIST.SP.800-171r2.pdf",
+      "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-171r2.pdf",
+      "document_type": "nist_800_171",
+      "version": "Rev 2",
+      "published_date": "2020-02-01",
+      "status": "withdrawn",
+      "priority": "critical",
+      "description": "Defines 110 security requirements for protecting CUI in nonfederal systems. Primary source for CMMC Level 2.",
+      "tags": ["nist", "controls", "requirements", "cui", "cmmc-foundation"]
+    },
+    {
+      "id": "nist-800-171a",
+      "title": "NIST SP 800-171A: Assessing Security Requirements for CUI",
+      "filename": "nist/NIST.SP.800-171A.pdf",
+      "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-171a.pdf",
+      "document_type": "nist_800_171a",
+      "version": "Original",
+      "published_date": "2018-06-13",
+      "status": "withdrawn",
+      "priority": "critical",
+      "description": "Assessment procedures and methodology for NIST SP 800-171. Defines Examine/Interview/Test objectives.",
+      "tags": ["nist", "assessment", "procedures", "objectives", "methodology"]
+    },
+    {
+      "id": "nist-800-171-r3",
+      "title": "NIST SP 800-171 Rev 3: Protecting Controlled Unclassified Information",
+      "filename": "nist/NIST.SP.800-171r3.pdf",
+      "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-171r3.pdf",
+      "document_type": "nist_800_171_rev3",
+      "version": "Rev 3",
+      "published_date": "2024-05-14",
+      "status": "current",
+      "priority": "optional",
+      "description": "Updated CUI protection requirements. Not yet adopted by CMMC but useful for future reference.",
+      "tags": ["nist", "controls", "requirements", "cui", "future"]
+    },
+    {
+      "id": "nist-800-171a-r3",
+      "title": "NIST SP 800-171A Rev 3: Assessing Security Requirements for CUI",
+      "filename": "nist/NIST.SP.800-171Ar3.pdf",
+      "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-171Ar3.pdf",
+      "document_type": "nist_800_171a_rev3",
+      "version": "Rev 3",
+      "published_date": "2024-05-14",
+      "status": "current",
+      "priority": "optional",
+      "description": "Updated assessment procedures. Not yet adopted by CMMC.",
+      "tags": ["nist", "assessment", "procedures", "objectives", "future"]
+    },
+    {
+      "id": "cmmc-model-v2-13",
+      "title": "CMMC Model v2.13: Model Overview",
+      "filename": "cmmc/CMMC-Model-v2.13.pdf",
+      "url": "https://dodcio.defense.gov/Portals/0/Documents/CMMC/ModelOverviewv2.pdf",
+      "document_type": "cmmc_model",
+      "version": "2.13",
+      "published_date": "2024-01-01",
+      "status": "current",
+      "priority": "critical",
+      "description": "Official CMMC framework defining Level 1, 2, and 3 requirements and practices.",
+      "tags": ["cmmc", "model", "levels", "practices", "official"]
+    },
+    {
+      "id": "cmmc-assessment-guide-l2",
+      "title": "CMMC Assessment Guide Level 2 v2.13",
+      "filename": "cmmc/CMMC-AssessmentGuide-L2-v2.13.pdf",
+      "url": "https://dodcio.defense.gov/Portals/0/Documents/CMMC/AssessmentGuideL2v2.pdf",
+      "document_type": "cmmc_assessment_guide",
+      "version": "2.13",
+      "published_date": "2024-01-01",
+      "status": "current",
+      "priority": "critical",
+      "description": "C3PAO assessment methodology, criteria, and requirement-specific guidance for Level 2.",
+      "tags": ["cmmc", "assessment", "c3pao", "level-2", "methodology"]
+    },
+    {
+      "id": "cmmc-scoping-guide-l2",
+      "title": "CMMC Scoping Guide Level 2 v2.13",
+      "filename": "cmmc/CMMC-ScopingGuide-L2-v2.13.pdf",
+      "url": "https://dodcio.defense.gov/Portals/0/Documents/CMMC/ScopingGuideL2v2.pdf",
+      "document_type": "cmmc_scoping_guide",
+      "version": "2.13",
+      "published_date": "2024-01-01",
+      "status": "current",
+      "priority": "high",
+      "description": "Guidance for defining CMMC assessment scope and boundaries.",
+      "tags": ["cmmc", "scoping", "boundaries", "level-2"]
+    },
+    {
+      "id": "cmmc-scope-l2-v2",
+      "title": "CMMC Scope Level 2 v2.0",
+      "filename": "cmmc/CMMC-Scope-L2-v2.0.pdf",
+      "url": "https://dodcio.defense.gov/Portals/0/Documents/CMMC/Scope_Level2_V2.0_FINAL_20211202_508.pdf",
+      "document_type": "cmmc_scope",
+      "version": "2.0",
+      "published_date": "2021-12-02",
+      "status": "superseded",
+      "priority": "medium",
+      "description": "Legacy scoping guidance from December 2021.",
+      "tags": ["cmmc", "scoping", "level-2", "legacy"]
+    },
+    {
+      "id": "dod-assessment-methodology",
+      "title": "NIST SP 800-171 DoD Assessment Methodology v1.2.1",
+      "filename": "guides/NIST-SP-800-171-DoD-Assessment-Methodology.pdf",
+      "url": "https://www.acq.osd.mil/asda/dpc/cp/cyber/docs/safeguarding/NIST-SP-800-171-Assessment-Methodology-Version-1.2.1-6.24.2020.pdf",
+      "document_type": "dod_assessment_methodology",
+      "version": "1.2.1",
+      "published_date": "2020-06-24",
+      "status": "current",
+      "priority": "high",
+      "description": "DoD-specific assessment procedures and scoring methodology (SPRS).",
+      "tags": ["dod", "assessment", "methodology", "sprs", "scoring"]
+    },
+    {
+      "id": "microsoft-cmmc-guide",
+      "title": "Microsoft Technical Reference Guide for CMMC 2.0",
+      "filename": "guides/Microsoft-CMMC-2.0-Technical-Reference.pdf",
+      "url": "https://download.microsoft.com/download/c/a/6/ca67ab87-4832-476e-8f01-b1572c7a740c/Microsoft%20Technical%20Reference%20Guide%20for%20CMMC%20v2_(Public%20Preview)_20220304%20(2).pdf",
+      "document_type": "provider_guide",
+      "version": "Public Preview",
+      "published_date": "2022-03-04",
+      "status": "preview",
+      "priority": "medium",
+      "description": "Microsoft 365 GCC High control inheritance mapping and implementation guidance.",
+      "tags": ["microsoft", "m365", "gcc-high", "provider-inheritance", "mapping"]
+    }
+  ],
+  "metadata": {
+    "last_updated": "2024-11-16",
+    "total_documents": 10,
+    "critical_documents": 4,
+    "version": "1.0"
+  }
+}
