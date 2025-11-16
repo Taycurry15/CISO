@@ -1,6 +1,6 @@
-# ComplianceFlow Landing Page - Production Deployment Guide
+# SmartGnosis Landing Page - Production Deployment Guide
 
-This guide walks you through deploying the ComplianceFlow landing page to production.
+This guide walks you through deploying the SmartGnosis landing page to production.
 
 ## Table of Contents
 
@@ -77,7 +77,7 @@ Edit `.env` with your production values:
 
 ```env
 # API Configuration
-API_BASE_URL=https://api.complianceflow.app
+API_BASE_URL=https://api.smartgnosis.com
 
 # Google Analytics
 GA_MEASUREMENT_ID=G-XXXXXXXXXX

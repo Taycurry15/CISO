@@ -1,10 +1,10 @@
-// ComplianceFlow Landing Page Configuration
+// SmartGnosis Landing Page Configuration
 // This file loads environment variables and provides a centralized config object
 
 const config = {
     // API Configuration
     api: {
-        baseUrl: process.env.API_BASE_URL || 'https://api.complianceflow.app',
+        baseUrl: process.env.API_BASE_URL || 'https://api.smartgnosis.com',
         endpoints: {
             login: process.env.API_LOGIN_ENDPOINT || '/api/v1/auth/login',
             signup: process.env.API_SIGNUP_ENDPOINT || '/api/v1/auth/signup',
@@ -56,17 +56,17 @@ const config = {
 
     // Site Information
     site: {
-        url: process.env.SITE_URL || 'https://complianceflow.app',
-        name: process.env.SITE_NAME || 'ComplianceFlow',
+        url: process.env.SITE_URL || 'https://smartgnosis.com',
+        name: process.env.SITE_NAME || 'SmartGnosis',
         description: process.env.SITE_DESCRIPTION || 'CMMC Compliance in Days, Not Months',
         keywords: process.env.SITE_KEYWORDS || 'CMMC,compliance,automation,AI,defense contractors,DIB',
     },
 
     // Social Media
     social: {
-        twitter: process.env.TWITTER_HANDLE || '@complianceflow',
-        facebook: process.env.FACEBOOK_PAGE || 'complianceflow',
-        linkedin: process.env.LINKEDIN_PAGE || 'company/complianceflow',
+        twitter: process.env.TWITTER_HANDLE || '@smartgnosis',
+        facebook: process.env.FACEBOOK_PAGE || 'smartgnosis',
+        linkedin: process.env.LINKEDIN_PAGE || 'company/smartgnosis',
     },
 
     // Security
@@ -163,5 +163,5 @@ if (typeof module !== 'undefined' && module.exports) {
 
 // Make available globally for browser
 if (typeof window !== 'undefined') {
-    window.ComplianceFlowConfig = config;
+    window.SmartGnosisConfig = config;
 }
