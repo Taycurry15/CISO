@@ -23,7 +23,7 @@ sudo ./deploy.sh
 ```
 
 The script will ask for:
-1. **Domain name**: cmmc.yourdomain.com
+1. **Domain name**: smartgnosis.com
 2. **Email**: your@email.com (for SSL)
 3. **Database password**: (create secure password)
 4. **AI API key**: sk-... (OpenAI or Anthropic)
@@ -43,10 +43,10 @@ The script will ask for:
 docker compose ps
 
 # Test health endpoint
-curl https://your-domain.com/health
+curl https://smartgnosis.com/health
 
 # View API docs
-# Open browser: https://your-domain.com/api/docs
+# Open browser: https://smartgnosis.com/api/docs
 ```
 
 Expected output:
@@ -76,7 +76,7 @@ VALUES ('Your Company', 2, 'Defense');
 INSERT INTO users (organization_id, email, name, role)
 VALUES (
   (SELECT id FROM organizations LIMIT 1),
-  'admin@company.com',
+  'admin@smartgnosis.com',
   'Admin User',
   'admin'
 );
@@ -111,9 +111,9 @@ docker compose up -d
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| Landing Page | https://your-domain.com | Public |
-| API Docs | https://your-domain.com/api/docs | Public |
-| Health Check | https://your-domain.com/health | Public |
+| Landing Page | https://smartgnosis.com | Public |
+| API Docs | https://smartgnosis.com/api/docs | Public |
+| Health Check | https://smartgnosis.com/health | Public |
 | MinIO Console | http://YOUR_IP:9001 | See .env file |
 | Database | localhost:5432 | See .env file |
 

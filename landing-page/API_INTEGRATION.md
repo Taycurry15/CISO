@@ -1,6 +1,6 @@
-# ComplianceFlow API Integration Guide
+# SmartGnosis API Integration Guide
 
-This guide explains how to integrate the ComplianceFlow landing page with your backend authentication API.
+This guide explains how to integrate the SmartGnosis landing page with your backend authentication API.
 
 ## Table of Contents
 

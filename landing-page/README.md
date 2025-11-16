@@ -1,8 +1,8 @@
-# ComplianceFlow - CMMC Compliance Landing Page
+# SmartGnosis - CMMC Compliance Landing Page
 
 ## Product Overview
 
-**ComplianceFlow** is the commercial name for our AI-powered CMMC compliance automation platform designed specifically for Defense Industrial Base (DIB) contractors.
+**SmartGnosis** is the commercial name for our AI-powered CMMC compliance automation platform designed specifically for Defense Industrial Base (DIB) contractors.
 
 ### Brand Positioning
 
@@ -192,7 +192,7 @@ aws cloudfront create-invalidation --distribution-id YOUR_DIST_ID --paths "/*"
 ```nginx
 server {
     listen 80;
-    server_name complianceflow.com www.complianceflow.com;
+    server_name smartgnosis.com www.smartgnosis.com;
 
     root /var/www/landing-page;
     index index.html;
@@ -308,23 +308,23 @@ function trackEvent(eventName, eventData = {}) {
 
 ```html
 <!-- Open Graph (Facebook/LinkedIn) -->
-<meta property="og:title" content="ComplianceFlow - CMMC Compliance Automation">
+<meta property="og:title" content="SmartGnosis - CMMC Compliance Automation">
 <meta property="og:description" content="Get CMMC certified in days with AI-powered automation">
-<meta property="og:image" content="https://complianceflow.com/og-image.jpg">
-<meta property="og:url" content="https://complianceflow.com">
+<meta property="og:image" content="https://smartgnosis.com/og-image.jpg">
+<meta property="og:url" content="https://smartgnosis.com">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="ComplianceFlow - CMMC Compliance Automation">
+<meta name="twitter:title" content="SmartGnosis - CMMC Compliance Automation">
 <meta name="twitter:description" content="Get CMMC certified in days with AI-powered automation">
-<meta name="twitter:image" content="https://complianceflow.com/twitter-card.jpg">
+<meta name="twitter:image" content="https://smartgnosis.com/twitter-card.jpg">
 
 <!-- Structured Data (JSON-LD) -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "ComplianceFlow",
+  "name": "SmartGnosis",
   "applicationCategory": "BusinessApplication",
   "offers": {
     "@type": "Offer",
@@ -343,7 +343,7 @@ Create `sitemap.xml` in root:
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://complianceflow.com/</loc>
+    <loc>https://smartgnosis.com/</loc>
     <lastmod>2025-01-16</lastmod>
     <priority>1.0</priority>
   </url>
@@ -355,7 +355,7 @@ Create `sitemap.xml` in root:
 ```txt
 User-agent: *
 Allow: /
-Sitemap: https://complianceflow.com/sitemap.xml
+Sitemap: https://smartgnosis.com/sitemap.xml
 ```
 
 ## Performance Optimization
@@ -452,12 +452,12 @@ Sitemap: https://complianceflow.com/sitemap.xml
 
 ## Support & Contact
 
-For questions about the landing page or ComplianceFlow platform:
+For questions about the landing page or SmartGnosis platform:
 
-- **Website**: https://complianceflow.com
-- **Email**: hello@complianceflow.com
-- **Sales**: sales@complianceflow.com
-- **Support**: support@complianceflow.com
+- **Website**: https://smartgnosis.com
+- **Email**: hello@smartgnosis.com
+- **Sales**: sales@smartgnosis.com
+- **Support**: support@smartgnosis.com
 
 ---
 
