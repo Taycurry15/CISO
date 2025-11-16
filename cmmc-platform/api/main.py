@@ -464,6 +464,39 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# ============================================================================
+# SECURITY MIDDLEWARE - OWASP API Security Top 10
+# ============================================================================
+
+from starlette.middleware.cors import CORSMiddleware
+from api.security_middleware import (
+    RateLimitMiddleware,
+    SecurityHeadersMiddleware,
+    InputValidationMiddleware,
+    AuditLoggingMiddleware,
+    get_cors_config
+)
+
+# Add security middleware (order matters - first added = outermost layer)
+
+# 1. Audit logging (outermost - logs everything)
+app.add_middleware(AuditLoggingMiddleware)
+
+# 2. Security headers
+app.add_middleware(SecurityHeadersMiddleware)
+
+# 3. CORS (must be before rate limiting to handle preflight requests)
+cors_config = get_cors_config()
+app.add_middleware(CORSMiddleware, **cors_config)
+
+# 4. Rate limiting (prevent abuse)
+app.add_middleware(RateLimitMiddleware)
+
+# 5. Input validation (innermost - validates all inputs before processing)
+app.add_middleware(InputValidationMiddleware)
+
+logger.info("Security middleware initialized with OWASP API Security protections")
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
