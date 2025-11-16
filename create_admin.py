@@ -4,6 +4,7 @@ Create an admin user for the CMMC platform
 """
 import asyncio
 import asyncpg
+import os
 import sys
 from passlib.context import CryptContext
 
@@ -13,20 +14,42 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 async def create_admin_user():
     """Create an admin user with full access"""
 
+    # Load required settings from environment to avoid hardcoding secrets
+    db_host = os.getenv("CMMC_DB_HOST", "localhost")
+    db_port = int(os.getenv("CMMC_DB_PORT", "5432"))
+    db_user = os.getenv("CMMC_DB_USER")
+    db_password = os.getenv("CMMC_DB_PASSWORD")
+    db_name = os.getenv("CMMC_DB_NAME", "cmmc_platform")
+
+    admin_email = os.getenv("CMMC_ADMIN_EMAIL")
+    admin_password = os.getenv("CMMC_ADMIN_PASSWORD")
+    admin_full_name = os.getenv("CMMC_ADMIN_NAME", "Admin User")
+
+    missing_vars = [
+        name for name, val in [
+            ("CMMC_DB_USER", db_user),
+            ("CMMC_DB_PASSWORD", db_password),
+            ("CMMC_ADMIN_EMAIL", admin_email),
+            ("CMMC_ADMIN_PASSWORD", admin_password),
+        ] if not val
+    ]
+    if missing_vars:
+        raise ValueError(f"Missing required environment vars: {', '.join(missing_vars)}")
+
     # Database connection
     conn = await asyncpg.connect(
-        host="localhost",
-        port=5432,
-        user="cmmc_admin",
-        password="KeianiJaxon1",
-        database="cmmc_platform"
+        host=db_host,
+        port=db_port,
+        user=db_user,
+        password=db_password,
+        database=db_name,
     )
 
     try:
         # User details
-        email = "taycurry15@gmail.com"
-        password = "Admin@2024!"  # You can change this after first login
-        full_name = "Admin User"
+        email = admin_email
+        password = admin_password
+        full_name = admin_full_name
 
         # Hash the password
         password_hash = pwd_context.hash(password)
