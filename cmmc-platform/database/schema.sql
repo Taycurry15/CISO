@@ -451,6 +451,283 @@ CREATE TABLE compliance_reports (
 );
 
 -- ============================================================================
+-- PHASE 4: CUSTOMER PORTAL & BILLING
+-- ============================================================================
+
+-- Team Invitations
+CREATE TABLE team_invitations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    email VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    invitation_token VARCHAR(255) UNIQUE NOT NULL,
+    invited_by UUID REFERENCES users(id),
+    message TEXT,
+    status VARCHAR(50) DEFAULT 'pending',
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    accepted_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- User Preferences
+CREATE TABLE user_preferences (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+    preferences JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Report Downloads
+CREATE TABLE report_downloads (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    assessment_id UUID REFERENCES assessments(id) ON DELETE CASCADE,
+    report_type VARCHAR(50) NOT NULL,
+    format VARCHAR(20) NOT NULL,
+    file_path TEXT NOT NULL,
+    downloaded_by UUID REFERENCES users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Subscriptions
+CREATE TABLE subscriptions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    plan VARCHAR(50) NOT NULL,
+    billing_interval VARCHAR(20) NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    price_cents INTEGER NOT NULL,
+    trial_end TIMESTAMP WITH TIME ZONE,
+    current_period_start TIMESTAMP WITH TIME ZONE NOT NULL,
+    current_period_end TIMESTAMP WITH TIME ZONE NOT NULL,
+    canceled_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Payment Methods
+CREATE TABLE payment_methods (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    stripe_payment_method_id VARCHAR(255) NOT NULL,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Invoices
+CREATE TABLE invoices (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    invoice_number VARCHAR(50) UNIQUE NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    period_start TIMESTAMP WITH TIME ZONE NOT NULL,
+    period_end TIMESTAMP WITH TIME ZONE NOT NULL,
+    due_date DATE,
+    paid_at TIMESTAMP WITH TIME ZONE,
+    invoice_pdf_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- White-Label Branding
+CREATE TABLE white_label_branding (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE UNIQUE,
+    company_name VARCHAR(255) NOT NULL,
+    logo_url TEXT,
+    favicon_url TEXT,
+    colors JSONB,
+    custom_domain VARCHAR(255),
+    support_email VARCHAR(255),
+    support_url TEXT,
+    terminology JSONB,
+    enabled BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Email Templates
+CREATE TABLE email_templates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE UNIQUE,
+    header_logo_url TEXT,
+    footer_text TEXT,
+    signature TEXT,
+    from_name VARCHAR(255),
+    from_email VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================================================
+-- PHASE 4: C3PAO WORKFLOW
+-- ============================================================================
+
+-- C3PAO Organizations
+CREATE TABLE c3pao_organizations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    certification_number VARCHAR(100) UNIQUE NOT NULL,
+    accreditation_body VARCHAR(100) NOT NULL,
+    contact_email VARCHAR(255) NOT NULL,
+    contact_phone VARCHAR(50),
+    status VARCHAR(50) DEFAULT 'active',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- C3PAO Assessors
+CREATE TABLE c3pao_assessors (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    c3pao_organization_id UUID REFERENCES c3pao_organizations(id) ON DELETE CASCADE,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- C3PAO Assessments
+CREATE TABLE c3pao_assessments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    assessment_id UUID REFERENCES assessments(id) ON DELETE CASCADE,
+    client_organization_id UUID REFERENCES organizations(id),
+    c3pao_organization_id UUID REFERENCES c3pao_organizations(id),
+    lead_assessor_id UUID REFERENCES c3pao_assessors(id),
+    planned_start_date DATE NOT NULL,
+    planned_end_date DATE NOT NULL,
+    current_phase VARCHAR(50) NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    scope_notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- C3PAO Milestones
+CREATE TABLE c3pao_milestones (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    c3pao_assessment_id UUID REFERENCES c3pao_assessments(id) ON DELETE CASCADE,
+    milestone_name VARCHAR(255) NOT NULL,
+    target_date DATE NOT NULL,
+    status VARCHAR(50) DEFAULT 'pending',
+    completed_date DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- C3PAO Phase History
+CREATE TABLE c3pao_phase_history (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    c3pao_assessment_id UUID REFERENCES c3pao_assessments(id) ON DELETE CASCADE,
+    phase VARCHAR(50) NOT NULL,
+    entered_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    entered_by UUID REFERENCES c3pao_assessors(id),
+    notes TEXT
+);
+
+-- C3PAO Finding Reviews
+CREATE TABLE c3pao_finding_reviews (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    finding_id UUID REFERENCES control_findings(id) ON DELETE CASCADE,
+    assessor_id UUID REFERENCES c3pao_assessors(id),
+    validation_status VARCHAR(50) NOT NULL,
+    assessor_comments TEXT,
+    evidence_sufficiency BOOLEAN NOT NULL,
+    remediation_required BOOLEAN NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- C3PAO Reports
+CREATE TABLE c3pao_reports (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    c3pao_assessment_id UUID REFERENCES c3pao_assessments(id) ON DELETE CASCADE,
+    report_type VARCHAR(50) NOT NULL,
+    filename VARCHAR(255) NOT NULL,
+    status VARCHAR(50) DEFAULT 'draft',
+    approved_by UUID REFERENCES c3pao_assessors(id),
+    approved_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- C3PAO Communications
+CREATE TABLE c3pao_communications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    c3pao_assessment_id UUID REFERENCES c3pao_assessments(id) ON DELETE CASCADE,
+    subject VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    sent_by UUID REFERENCES c3pao_assessors(id),
+    sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================================================
+-- PHASE 4: ASSESSMENT SCHEDULING
+-- ============================================================================
+
+-- Scheduled Events
+CREATE TABLE scheduled_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    assessment_id UUID REFERENCES assessments(id) ON DELETE CASCADE,
+    event_type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    start_datetime TIMESTAMP WITH TIME ZONE NOT NULL,
+    end_datetime TIMESTAMP WITH TIME ZONE NOT NULL,
+    location VARCHAR(255),
+    virtual_meeting_url TEXT,
+    scheduled_by UUID REFERENCES users(id),
+    status VARCHAR(50) DEFAULT 'scheduled',
+    reminder_minutes INTEGER DEFAULT 60,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Event Attendees
+CREATE TABLE event_attendees (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    event_id UUID REFERENCES scheduled_events(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id),
+    response_status VARCHAR(50) DEFAULT 'pending',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Event Reminders
+CREATE TABLE event_reminders (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    event_id UUID REFERENCES scheduled_events(id) ON DELETE CASCADE,
+    reminder_datetime TIMESTAMP WITH TIME ZONE NOT NULL,
+    sent BOOLEAN DEFAULT FALSE,
+    sent_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Assessor Availability
+CREATE TABLE assessor_availability (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    assessor_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    availability_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    is_available BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(assessor_id, availability_date)
+);
+
+-- Assessment Milestones
+CREATE TABLE assessment_milestones (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    assessment_id UUID REFERENCES assessments(id) ON DELETE CASCADE,
+    milestone_name VARCHAR(255) NOT NULL,
+    target_date DATE NOT NULL,
+    description TEXT,
+    status VARCHAR(50) DEFAULT 'pending',
+    completed_date DATE,
+    completed_by UUID REFERENCES users(id),
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================================================
 -- INDEXES FOR PERFORMANCE
 -- ============================================================================
 
