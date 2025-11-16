@@ -1,4 +1,4 @@
-// ComplianceFlow Landing Page JavaScript
+// SmartGnosis Landing Page JavaScript
 
 // ===========================
 // Smooth Scrolling
@@ -530,7 +530,7 @@ document.querySelectorAll('.pricing-card').forEach(card => {
 // Initialize on DOM Load
 // ===========================
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('ComplianceFlow landing page loaded');
+    console.log('SmartGnosis landing page loaded');
 
     // Track page view
     trackEvent('page_view', {
@@ -963,7 +963,7 @@ if (signupForm) {
             if (response.ok || true) { // Remove "|| true" in production
                 // Success
                 trackEvent('signup_success', { method: 'email' });
-                showNotification('Account created! Welcome to ComplianceFlow!', 'success');
+                showNotification('Account created! Welcome to SmartGnosis!', 'success');
 
                 // Redirect to onboarding or dashboard
                 setTimeout(() => {
@@ -1023,4 +1023,4 @@ document.querySelectorAll('.forgot-password').forEach(link => {
     });
 });
 
-console.log('ComplianceFlow v1.0 - Ready to accelerate compliance!');
+console.log('SmartGnosis v1.0 - Ready to accelerate compliance!');

@@ -46,7 +46,7 @@ The CISO App is a comprehensive CMMC compliance platform consisting of:
 Example DNS configuration:
 ```
 Type: A
-Name: cmmc (or your subdomain)
+Name: @ (for root domain)
 Value: YOUR_VPS_IP_ADDRESS
 TTL: 3600
 ```
@@ -84,7 +84,7 @@ sudo ./deploy.sh
 ```
 
 The script will prompt you for:
-- Domain name
+- Domain name (e.g., smartgnosis.com)
 - Email for SSL certificates
 - Database password
 - AI API key (OpenAI or Anthropic)
@@ -129,10 +129,10 @@ For detailed step-by-step manual deployment, see:
 
 ```bash
 # Check service health
-curl https://your-domain.com/health
+curl https://smartgnosis.com/health
 
 # Check API documentation
-curl https://your-domain.com/api/docs
+curl https://smartgnosis.com/api/docs
 
 # View all services
 docker compose ps
@@ -160,7 +160,7 @@ VALUES ('Your Company Name', 2, 'Defense');
 INSERT INTO users (organization_id, email, name, role)
 VALUES (
   (SELECT id FROM organizations WHERE name = 'Your Company Name'),
-  'admin@yourcompany.com',
+  'admin@smartgnosis.com',
   'Admin User',
   'admin'
 );

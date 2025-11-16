@@ -152,8 +152,8 @@ docker-compose exec ciso-assistant python manage.py createsuperuser
 ```
 
 ### 4. Access Platform
-- **CISO Assistant**: https://your-domain.com
-- **API Docs**: https://your-domain.com/api/docs
+- **CISO Assistant**: https://smartgnosis.com
+- **API Docs**: https://smartgnosis.com/api/docs
 - **MinIO Console**: http://your-ip:9001 (SSH tunnel only)
 
 **Full deployment guide**: [DEPLOYMENT.md](./DEPLOYMENT.md)
@@ -367,7 +367,7 @@ Please open issues for major changes before submitting PRs.
 - **AGPL-3.0** for open-source/personal use
 - **Commercial License** for SaaS/enterprise deployments
 
-Contact: [your-email@company.com]
+Contact: [support@smartgnosis.com]
 
 ## 🙏 Credits
 
@@ -378,9 +378,9 @@ Built on top of:
 
 ## 📞 Support
 
-- Documentation: [docs.your-platform.com]
+- Documentation: [docs.smartgnosis.com]
 - Community: [Slack/Discord link]
-- Enterprise: [sales@your-platform.com]
+- Enterprise: [sales@smartgnosis.com]
 - Issues: [GitHub Issues]
 
 ## 🚧 Status
