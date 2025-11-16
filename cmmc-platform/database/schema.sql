@@ -50,9 +50,11 @@ CREATE TABLE control_domains (
 CREATE TABLE controls (
     id VARCHAR(20) PRIMARY KEY, -- AC.L1-3.1.1, AC.L2-3.1.2, etc.
     domain_id VARCHAR(10) REFERENCES control_domains(id),
+    family VARCHAR(10), -- Duplicate of domain_id for query compatibility (AC, AU, etc.)
     control_number VARCHAR(20) NOT NULL,
     title TEXT NOT NULL,
     nist_800_171_ref VARCHAR(20), -- 3.1.1, 3.1.2, etc.
+    framework VARCHAR(50) DEFAULT 'NIST 800-171', -- Framework identifier
     cmmc_level INTEGER CHECK (cmmc_level IN (1, 2, 3)),
     requirement_text TEXT NOT NULL,
     discussion TEXT,
@@ -136,37 +138,38 @@ CREATE TABLE evidence (
     assessment_id UUID REFERENCES assessments(id) ON DELETE CASCADE,
     control_id VARCHAR(20) REFERENCES controls(id),
     objective_id VARCHAR(30) REFERENCES assessment_objectives(id),
-    
+
     -- Evidence metadata
     evidence_type VARCHAR(50) NOT NULL, -- document, screenshot, log, interview_notes, test_result, configuration
     title VARCHAR(255) NOT NULL,
     description TEXT,
+    content JSONB, -- Additional structured evidence content (logs, findings, etc.)
     method VARCHAR(20) CHECK (method IN ('Examine', 'Interview', 'Test')),
-    
+
     -- Immutability & chain-of-custody
     file_path TEXT, -- Path to actual file in object storage
     file_hash VARCHAR(64) NOT NULL, -- SHA-256 hash of file
     file_size_bytes BIGINT,
     mime_type VARCHAR(100),
-    
+
     -- Provenance
     collected_by UUID REFERENCES users(id),
     collected_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     collection_method VARCHAR(100), -- manual_upload, api_nessus, api_splunk, automated_screenshot
-    
+
     -- Version control
     version INTEGER DEFAULT 1,
     supersedes_evidence_id UUID REFERENCES evidence(id), -- Link to previous version
-    
+
     -- Status
     status VARCHAR(50) DEFAULT 'pending_review', -- pending_review, approved, rejected, superseded
     reviewed_by UUID REFERENCES users(id),
     reviewed_date TIMESTAMP WITH TIME ZONE,
     reviewer_notes TEXT,
-    
+
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
+
     CONSTRAINT unique_file_hash UNIQUE (file_hash)
 );
 
