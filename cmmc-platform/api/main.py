@@ -1,8 +1,9 @@
 # CMMC Compliance Platform - FastAPI Service
 # Assessor-grade endpoints for evidence management, AI analysis, and report generation
 
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, BackgroundTasks, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date
@@ -53,6 +54,9 @@ from api.auth import (
     AuthToken,
     UserRole
 )
+
+# Import OAuth
+from api.oauth import oauth, handle_oauth_callback, FRONTEND_URL
 
 # Note: FastAPI app initialization will be updated after lifespan is defined
 # Placeholder for now - will be moved after lifespan definition
@@ -594,6 +598,97 @@ async def signup_endpoint(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create account"
         )
+
+# ----------------------------------------------------------------------------
+# OAUTH ENDPOINTS
+# ----------------------------------------------------------------------------
+
+@app.get("/api/v1/auth/google")
+async def google_login(request: Request):
+    """
+    Initiate Google OAuth login flow.
+
+    Redirects user to Google login page.
+    """
+    redirect_uri = request.url_for('google_callback')
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+@app.get("/api/v1/auth/google/callback")
+async def google_callback(
+    request: Request,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Handle Google OAuth callback.
+
+    Processes OAuth response, creates/finds user, generates JWT tokens,
+    and redirects to frontend with tokens.
+    """
+    try:
+        # Get OAuth token from Google
+        token = await oauth.google.authorize_access_token(request)
+
+        # Get user info from Google
+        user_info = token.get('userinfo')
+        if not user_info:
+            # Fetch user info if not in token
+            resp = await oauth.google.get('https://www.googleapis.com/oauth2/v3/userinfo', token=token)
+            user_info = resp.json()
+
+        # Handle OAuth callback and generate tokens
+        auth_token = await handle_oauth_callback('google', user_info, conn)
+
+        # Redirect to frontend with tokens in URL params (will be moved to localStorage by frontend)
+        redirect_url = f"{FRONTEND_URL}/?access_token={auth_token.access_token}&refresh_token={auth_token.refresh_token}&auth_success=true"
+
+        return RedirectResponse(url=redirect_url)
+
+    except Exception as e:
+        logger.error(f"Google OAuth error: {str(e)}")
+        # Redirect to frontend with error
+        return RedirectResponse(url=f"{FRONTEND_URL}/?auth_error={str(e)}")
+
+@app.get("/api/v1/auth/microsoft")
+async def microsoft_login(request: Request):
+    """
+    Initiate Microsoft OAuth login flow.
+
+    Redirects user to Microsoft login page.
+    """
+    redirect_uri = request.url_for('microsoft_callback')
+    return await oauth.microsoft.authorize_redirect(request, redirect_uri)
+
+@app.get("/api/v1/auth/microsoft/callback")
+async def microsoft_callback(
+    request: Request,
+    conn: asyncpg.Connection = Depends(get_db)
+):
+    """
+    Handle Microsoft OAuth callback.
+
+    Processes OAuth response, creates/finds user, generates JWT tokens,
+    and redirects to frontend with tokens.
+    """
+    try:
+        # Get OAuth token from Microsoft
+        token = await oauth.microsoft.authorize_access_token(request)
+
+        # Get user info from Microsoft
+        resp = await oauth.microsoft.get('https://graph.microsoft.com/v1.0/me', token=token)
+        user_info = resp.json()
+
+        # Handle OAuth callback and generate tokens
+        auth_token = await handle_oauth_callback('microsoft', user_info, conn)
+
+        # Redirect to frontend with tokens in URL params
+        redirect_url = f"{FRONTEND_URL}/?access_token={auth_token.access_token}&refresh_token={auth_token.refresh_token}&auth_success=true"
+
+        return RedirectResponse(url=redirect_url)
+
+    except Exception as e:
+        logger.error(f"Microsoft OAuth error: {str(e)}")
+        # Redirect to frontend with error
+        return RedirectResponse(url=f"{FRONTEND_URL}/?auth_error={str(e)}")
 
 @app.get("/health/ai")
 async def ai_health_check():

@@ -1039,10 +1039,45 @@ document.querySelectorAll('.social-btn').forEach(btn => {
 
         // Redirect to OAuth endpoint
         setTimeout(() => {
-            window.location.href = `/api/auth/${provider}`;
+            window.location.href = `/api/v1/auth/${provider}`;
         }, 500);
     });
 });
+
+// ===========================
+// OAuth Callback Handler
+// ===========================
+// Check if we're returning from OAuth (tokens in URL)
+const urlParams = new URLSearchParams(window.location.search);
+const accessToken = urlParams.get('access_token');
+const refreshToken = urlParams.get('refresh_token');
+const authSuccess = urlParams.get('auth_success');
+const authError = urlParams.get('auth_error');
+
+if (authSuccess && accessToken) {
+    // Store tokens from OAuth callback
+    localStorage.setItem('access_token', accessToken);
+    if (refreshToken) {
+        localStorage.setItem('refresh_token', refreshToken);
+    }
+
+    // Show success notification
+    showNotification('Successfully logged in! Welcome to SmartGnosis!', 'success');
+
+    // Clean up URL and reload
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    // Reload page to show authenticated state
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
+} else if (authError) {
+    // Show error notification
+    showNotification(`Authentication failed: ${authError}`, 'error');
+
+    // Clean up URL
+    window.history.replaceState({}, document.title, window.location.pathname);
+}
 
 // ===========================
 // Forgot Password Handler
