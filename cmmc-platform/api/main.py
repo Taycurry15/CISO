@@ -52,7 +52,9 @@ from api.auth import (
     LoginRequest,
     CreateUserRequest,
     AuthToken,
-    UserRole
+    UserRole,
+    TokenData,
+    get_current_user
 )
 
 # Import OAuth
@@ -262,6 +264,31 @@ class ProviderInheritance(BaseModel):
 def calculate_file_hash(file_content: bytes) -> str:
     """Calculate SHA-256 hash of file content"""
     return hashlib.sha256(file_content).hexdigest()
+
+def validate_upload(file: UploadFile, file_content: bytes) -> str:
+    """
+    Validate upload for size, MIME type, and magic bytes.
+    Returns sanitized filename for logging if needed.
+    """
+    if not FileUploadValidator.validate_file_size(len(file_content)):
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="File too large"
+        )
+
+    if not FileUploadValidator.validate_mime_type(file.content_type):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported file type"
+        )
+
+    if not FileUploadValidator.validate_magic_bytes(file_content, file.content_type):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File content does not match declared type"
+        )
+
+    return FileUploadValidator.sanitize_and_validate_filename(file.filename)
 
 async def store_file(file_content: bytes, file_hash: str, mime_type: str) -> str:
     """Store file in object storage and return path"""
@@ -488,6 +515,7 @@ from api.security_middleware import (
     SecurityHeadersMiddleware,
     InputValidationMiddleware,
     AuditLoggingMiddleware,
+    FileUploadValidator,
     get_cors_config
 )
 
@@ -761,7 +789,8 @@ async def ai_health_check():
 async def ingest_document(
     file: UploadFile = File(...),
     request: DocumentIngestRequest = Depends(),
-    conn: asyncpg.Connection = Depends(get_db)
+    conn: asyncpg.Connection = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Ingest a document (PDF, DOCX, etc.), extract text, chunk it, and create embeddings.
@@ -776,6 +805,7 @@ async def ingest_document(
     
     # Read file content
     file_content = await file.read()
+    validate_upload(file, file_content)
     file_hash = calculate_file_hash(file_content)
     
     # Store file
@@ -793,7 +823,7 @@ async def ingest_document(
         request.document_type,
         file_path,
         file_hash,
-        uuid.UUID('00000000-0000-0000-0000-000000000000')  # TODO: Get from auth
+        uuid.UUID(current_user.user_id)
     )
     
     chunks_created = 0
@@ -1115,7 +1145,8 @@ async def export_poam(
 async def upload_evidence(
     file: UploadFile = File(...),
     request: EvidenceUploadRequest = Depends(),
-    conn: asyncpg.Connection = Depends(get_db)
+    conn: asyncpg.Connection = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Upload evidence file with immutable storage and chain-of-custody tracking.
@@ -1128,6 +1159,7 @@ async def upload_evidence(
     """
     # Read file
     file_content = await file.read()
+    validate_upload(file, file_content)
     file_hash = calculate_file_hash(file_content)
     file_size = len(file_content)
     
@@ -1154,7 +1186,7 @@ async def upload_evidence(
         file_hash,
         file_size,
         file.content_type,
-        uuid.UUID('00000000-0000-0000-0000-000000000000')  # TODO: Get from auth
+        uuid.UUID(current_user.user_id)
     )
     
     # Log access
@@ -1164,7 +1196,7 @@ async def upload_evidence(
         VALUES ($1, $2, 'upload')
         """,
         evidence_id,
-        uuid.UUID('00000000-0000-0000-0000-000000000000')  # TODO: Get from auth
+        uuid.UUID(current_user.user_id)
     )
     
     return EvidenceUploadResponse(
