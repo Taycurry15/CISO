@@ -65,6 +65,8 @@ from api.oauth import (
     set_auth_cookies,
     generate_oauth_state,
     oauth_state_cookie_params,
+    validate_state_nonce,
+    scrub_token_fragment,
 )
 
 # Note: FastAPI app initialization will be updated after lifespan is defined
@@ -671,7 +673,20 @@ async def google_callback(
         # Validate state (CSRF protection)
         state_param = request.query_params.get("state")
         state_cookie = request.cookies.get("oauth_state")
-        if not state_param or not state_cookie or state_param != state_cookie:
+        if not validate_state_nonce(state_param) or not validate_state_nonce(state_cookie):
+            logger.warning(
+                "OAuth state validation failed format check (google)",
+                extra={"state_param": scrub_token_fragment(state_param), "state_cookie": scrub_token_fragment(state_cookie)}
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid OAuth state"
+            )
+        if state_param != state_cookie:
+            logger.warning(
+                "OAuth state mismatch (google)",
+                extra={"state_param": scrub_token_fragment(state_param), "state_cookie": scrub_token_fragment(state_cookie)}
+            )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid OAuth state"
@@ -735,7 +750,20 @@ async def microsoft_callback(
         # Validate state (CSRF protection)
         state_param = request.query_params.get("state")
         state_cookie = request.cookies.get("oauth_state")
-        if not state_param or not state_cookie or state_param != state_cookie:
+        if not validate_state_nonce(state_param) or not validate_state_nonce(state_cookie):
+            logger.warning(
+                "OAuth state validation failed format check (microsoft)",
+                extra={"state_param": scrub_token_fragment(state_param), "state_cookie": scrub_token_fragment(state_cookie)}
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid OAuth state"
+            )
+        if state_param != state_cookie:
+            logger.warning(
+                "OAuth state mismatch (microsoft)",
+                extra={"state_param": scrub_token_fragment(state_param), "state_cookie": scrub_token_fragment(state_cookie)}
+            )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid OAuth state"

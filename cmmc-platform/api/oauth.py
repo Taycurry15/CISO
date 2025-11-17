@@ -16,6 +16,7 @@ import secrets
 import asyncpg
 import logging
 import os
+import re
 from urllib.parse import urlparse
 from fastapi import HTTPException, status, Request
 from fastapi.responses import RedirectResponse
@@ -99,6 +100,20 @@ def oauth_state_cookie_params(request: Request) -> dict:
 def generate_oauth_state() -> str:
     """Generate a random OAuth state token."""
     return secrets.token_urlsafe(32)
+
+STATE_NONCE_PATTERN = re.compile(r"^[A-Za-z0-9_-]{32,128}$")
+
+def validate_state_nonce(value: str) -> bool:
+    """Ensure state/nonce meets length and charset constraints."""
+    if not value:
+        return False
+    return bool(STATE_NONCE_PATTERN.match(value))
+
+def scrub_token_fragment(value: str) -> str:
+    """Return a minimal, non-sensitive fragment for logging."""
+    if not value:
+        return ""
+    return f"{value[:6]}...len={len(value)}"
 
 # Register OAuth providers
 if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
