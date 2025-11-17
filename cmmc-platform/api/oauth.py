@@ -84,6 +84,22 @@ def set_auth_cookies(response: RedirectResponse, auth_token: AuthToken):
             max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
         )
 
+def oauth_state_cookie_params(request: Request) -> dict:
+    """Return secure cookie parameters for OAuth state handling."""
+    parsed = urlparse(str(request.url))
+    return {
+        "httponly": True,
+        "secure": parsed.scheme == "https",
+        "samesite": "lax",
+        "domain": parsed.hostname,
+        "path": "/",
+        "max_age": 600,  # 10 minutes
+    }
+
+def generate_oauth_state() -> str:
+    """Generate a random OAuth state token."""
+    return secrets.token_urlsafe(32)
+
 # Register OAuth providers
 if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
     oauth.register(

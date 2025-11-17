@@ -280,7 +280,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         csp_directives = [
             "default-src 'self'",
             "script-src 'self'",
-            "style-src 'self' 'unsafe-inline'",  # keep inline styles only if required by UI
+            "style-src 'self'",
             "img-src 'self' data: https:",
             "font-src 'self' data:",
             "connect-src 'self'",

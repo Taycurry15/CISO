@@ -58,7 +58,14 @@ from api.auth import (
 )
 
 # Import OAuth
-from api.oauth import oauth, handle_oauth_callback, FRONTEND_URL, set_auth_cookies
+from api.oauth import (
+    oauth,
+    handle_oauth_callback,
+    FRONTEND_URL,
+    set_auth_cookies,
+    generate_oauth_state,
+    oauth_state_cookie_params,
+)
 
 # Note: FastAPI app initialization will be updated after lifespan is defined
 # Placeholder for now - will be moved after lifespan definition
@@ -639,7 +646,10 @@ async def google_login(request: Request):
     Redirects user to Google login page.
     """
     redirect_uri = request.url_for('google_callback')
-    return await oauth.google.authorize_redirect(request, redirect_uri)
+    state_token = generate_oauth_state()
+    response = await oauth.google.authorize_redirect(request, redirect_uri, state=state_token)
+    response.set_cookie("oauth_state", state_token, **oauth_state_cookie_params(request))
+    return response
 
 @app.get("/api/v1/auth/google/callback")
 async def google_callback(
@@ -653,6 +663,15 @@ async def google_callback(
     and redirects to frontend with tokens.
     """
     try:
+        # Validate state (CSRF protection)
+        state_param = request.query_params.get("state")
+        state_cookie = request.cookies.get("oauth_state")
+        if not state_param or not state_cookie or state_param != state_cookie:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid OAuth state"
+            )
+
         # Get OAuth token from Google
         token = await oauth.google.authorize_access_token(request)
 
@@ -670,6 +689,7 @@ async def google_callback(
         redirect_url = f"{FRONTEND_URL}/?auth_success=true"
         response = RedirectResponse(url=redirect_url)
         set_auth_cookies(response, auth_token)
+        response.delete_cookie("oauth_state", domain=oauth_state_cookie_params(request)["domain"], path="/")
         return response
 
     except Exception as e:
@@ -685,7 +705,10 @@ async def microsoft_login(request: Request):
     Redirects user to Microsoft login page.
     """
     redirect_uri = request.url_for('microsoft_callback')
-    return await oauth.microsoft.authorize_redirect(request, redirect_uri)
+    state_token = generate_oauth_state()
+    response = await oauth.microsoft.authorize_redirect(request, redirect_uri, state=state_token)
+    response.set_cookie("oauth_state", state_token, **oauth_state_cookie_params(request))
+    return response
 
 @app.get("/api/v1/auth/microsoft/callback")
 async def microsoft_callback(
@@ -699,6 +722,15 @@ async def microsoft_callback(
     and redirects to frontend with tokens.
     """
     try:
+        # Validate state (CSRF protection)
+        state_param = request.query_params.get("state")
+        state_cookie = request.cookies.get("oauth_state")
+        if not state_param or not state_cookie or state_param != state_cookie:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid OAuth state"
+            )
+
         # Get OAuth token from Microsoft
         token = await oauth.microsoft.authorize_access_token(request)
 
@@ -713,6 +745,7 @@ async def microsoft_callback(
         redirect_url = f"{FRONTEND_URL}/?auth_success=true"
         response = RedirectResponse(url=redirect_url)
         set_auth_cookies(response, auth_token)
+        response.delete_cookie("oauth_state", domain=oauth_state_cookie_params(request)["domain"], path="/")
         return response
 
     except Exception as e:
