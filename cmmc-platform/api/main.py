@@ -647,7 +647,12 @@ async def google_login(request: Request):
     """
     redirect_uri = request.url_for('google_callback')
     state_token = generate_oauth_state()
-    response = await oauth.google.authorize_redirect(request, redirect_uri, state=state_token)
+    response = await oauth.google.authorize_redirect(
+        request,
+        redirect_uri,
+        state=state_token,
+        nonce=state_token  # reuse state as nonce to bind id_token
+    )
     response.set_cookie("oauth_state", state_token, **oauth_state_cookie_params(request))
     return response
 
@@ -683,7 +688,7 @@ async def google_callback(
             user_info = resp.json()
 
         # Handle OAuth callback and generate tokens
-        auth_token = await handle_oauth_callback('google', user_info, conn)
+        auth_token = await handle_oauth_callback('google', user_info, conn, expected_nonce=state_param)
 
         # Redirect without leaking tokens in URL; deliver via HttpOnly cookies
         redirect_url = f"{FRONTEND_URL}/?auth_success=true"
@@ -706,7 +711,12 @@ async def microsoft_login(request: Request):
     """
     redirect_uri = request.url_for('microsoft_callback')
     state_token = generate_oauth_state()
-    response = await oauth.microsoft.authorize_redirect(request, redirect_uri, state=state_token)
+    response = await oauth.microsoft.authorize_redirect(
+        request,
+        redirect_uri,
+        state=state_token,
+        nonce=state_token
+    )
     response.set_cookie("oauth_state", state_token, **oauth_state_cookie_params(request))
     return response
 
@@ -739,7 +749,7 @@ async def microsoft_callback(
         user_info = resp.json()
 
         # Handle OAuth callback and generate tokens
-        auth_token = await handle_oauth_callback('microsoft', user_info, conn)
+        auth_token = await handle_oauth_callback('microsoft', user_info, conn, expected_nonce=state_param)
 
         # Redirect without leaking tokens in URL; deliver via HttpOnly cookies
         redirect_url = f"{FRONTEND_URL}/?auth_success=true"

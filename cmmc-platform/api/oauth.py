@@ -230,7 +230,8 @@ async def find_or_create_oauth_user(
 async def handle_oauth_callback(
     provider: str,
     user_info: Dict[str, Any],
-    conn: asyncpg.Connection
+    conn: asyncpg.Connection,
+    expected_nonce: Optional[str] = None
 ) -> AuthToken:
     """
     Handle OAuth callback and generate JWT tokens.
@@ -248,14 +249,22 @@ async def handle_oauth_callback(
         email = user_info.get('email')
         full_name = user_info.get('name', email)
         provider_user_id = user_info.get('sub')
+        nonce = user_info.get('nonce')
     elif provider == 'microsoft':
         email = user_info.get('email') or user_info.get('userPrincipalName')
         full_name = user_info.get('name', email)
         provider_user_id = user_info.get('sub') or user_info.get('id')
+        nonce = user_info.get('nonce')
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Unsupported OAuth provider: {provider}"
+        )
+
+    if expected_nonce and nonce and nonce != expected_nonce:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nonce mismatch in OAuth response"
         )
 
     if not email:
