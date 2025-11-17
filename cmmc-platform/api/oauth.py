@@ -16,6 +16,7 @@ import secrets
 import asyncpg
 import logging
 import os
+from urllib.parse import urlparse
 from fastapi import HTTPException, status, Request
 from fastapi.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
@@ -27,7 +28,8 @@ from api.auth import (
     hash_password,
     AuthToken,
     UserRole,
-    ACCESS_TOKEN_EXPIRE_MINUTES
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    REFRESH_TOKEN_EXPIRE_DAYS
 )
 
 logger = logging.getLogger(__name__)
@@ -49,6 +51,38 @@ MICROSOFT_REDIRECT_URI = os.getenv("MICROSOFT_REDIRECT_URI", "http://localhost/a
 
 # Frontend redirect after successful OAuth
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://smartgnosis.com")
+
+# Cookie settings helper
+def set_auth_cookies(response: RedirectResponse, auth_token: AuthToken):
+    """
+    Set HttpOnly cookies for access/refresh tokens instead of placing them in URLs.
+    """
+    parsed = urlparse(FRONTEND_URL)
+    cookie_domain = parsed.hostname
+    secure = parsed.scheme == "https"
+
+    response.set_cookie(
+        "access_token",
+        auth_token.access_token,
+        httponly=True,
+        secure=secure,
+        samesite="lax",
+        domain=cookie_domain,
+        path="/",
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+
+    if auth_token.refresh_token:
+        response.set_cookie(
+            "refresh_token",
+            auth_token.refresh_token,
+            httponly=True,
+            secure=secure,
+            samesite="lax",
+            domain=cookie_domain,
+            path="/",
+            max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        )
 
 # Register OAuth providers
 if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:

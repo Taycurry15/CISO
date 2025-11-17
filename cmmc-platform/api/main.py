@@ -58,7 +58,7 @@ from api.auth import (
 )
 
 # Import OAuth
-from api.oauth import oauth, handle_oauth_callback, FRONTEND_URL
+from api.oauth import oauth, handle_oauth_callback, FRONTEND_URL, set_auth_cookies
 
 # Note: FastAPI app initialization will be updated after lifespan is defined
 # Placeholder for now - will be moved after lifespan definition
@@ -666,10 +666,11 @@ async def google_callback(
         # Handle OAuth callback and generate tokens
         auth_token = await handle_oauth_callback('google', user_info, conn)
 
-        # Redirect to frontend with tokens in URL params (will be moved to localStorage by frontend)
-        redirect_url = f"{FRONTEND_URL}/?access_token={auth_token.access_token}&refresh_token={auth_token.refresh_token}&auth_success=true"
-
-        return RedirectResponse(url=redirect_url)
+        # Redirect without leaking tokens in URL; deliver via HttpOnly cookies
+        redirect_url = f"{FRONTEND_URL}/?auth_success=true"
+        response = RedirectResponse(url=redirect_url)
+        set_auth_cookies(response, auth_token)
+        return response
 
     except Exception as e:
         logger.error(f"Google OAuth error: {str(e)}")
@@ -708,10 +709,11 @@ async def microsoft_callback(
         # Handle OAuth callback and generate tokens
         auth_token = await handle_oauth_callback('microsoft', user_info, conn)
 
-        # Redirect to frontend with tokens in URL params
-        redirect_url = f"{FRONTEND_URL}/?access_token={auth_token.access_token}&refresh_token={auth_token.refresh_token}&auth_success=true"
-
-        return RedirectResponse(url=redirect_url)
+        # Redirect without leaking tokens in URL; deliver via HttpOnly cookies
+        redirect_url = f"{FRONTEND_URL}/?auth_success=true"
+        response = RedirectResponse(url=redirect_url)
+        set_auth_cookies(response, auth_token)
+        return response
 
     except Exception as e:
         logger.error(f"Microsoft OAuth error: {str(e)}")

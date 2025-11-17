@@ -279,8 +279,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # Content Security Policy
         csp_directives = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'",  # Adjust as needed for your frontend
-            "style-src 'self' 'unsafe-inline'",
+            "script-src 'self'",
+            "style-src 'self' 'unsafe-inline'",  # keep inline styles only if required by UI
             "img-src 'self' data: https:",
             "font-src 'self' data:",
             "connect-src 'self'",
